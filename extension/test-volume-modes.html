@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Volume Modes Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .test-results { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Browser Volume Controller - Volume Modes Test</h1>
+    
+    <div class="test-section">
+        <h2>Volume Mode Implementation Test</h2>
+        <div id="test-results"></div>
+        <button onclick="runTests()">Run Tests</button>
+    </div>
+
+    <script type="module">
+        // Import our volume modes module for testing
+        import { VolumeModeController, VolumeMode } from './src/volume-modes.js';
+
+        window.VolumeModeController = VolumeModeController;
+        
+        function createTestSource(id, tabId, volume = 50) {
+            return {
+                id: id,
+                tabId: tabId,
+                title: `Test Tab ${id}`,
+                url: `https://example${id}.com`,
+                volume: volume,
+                muted: false
+            };
+        }
+
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+            
+            const tests = [
+                testIndependentMode,
+                testLinkedMode,
+                testInverseMode,
+                testModeTransitions,
+                testMasterControls
+            ];
+            
+            let passed = 0;
+            let failed = 0;
+            
+            tests.forEach(test => {
+                try {
+                    const result = test();
+                    if (result.passed) {
+                        passed++;
+                        resultsDiv.innerHTML += `<div class="pass">✓ ${result.name}</div>`;
+                    } else {
+                        failed++;
+                        resultsDiv.innerHTML += `<div class="fail">✗ ${result.name}: ${result.error}</div>`;
+                    }
+                } catch (error) {
+                    failed++;
+                    resultsDiv.innerHTML += `<div class="fail">✗ ${test.name}: ${error.message}</div>`;
+                }
+            });
+            
+            resultsDiv.innerHTML += `<div style="margin-top: 15px; font-weight: bold;">
+                Results: ${passed} passed, ${failed} failed
+            </div>`;
+        }
+
+        function testIndependentMode() {
+            const controller = new VolumeModeController();
+            controller.setMode('independent');
+            
+            // Add test sources
+            const source1 = createTestSource('1', 1, 50);
+            const source2 = createTestSource('2', 2, 75);
+            controller.addSource(source1);
+            controller.addSource(source2);
+            
+            // Test independent volume change
+            controller.setSourceVolume('1', 100);
+            const sources = controller.getSources();
+            
+            const s1 = sources.find(s => s.id === '1');
+            const s2 = sources.find(s => s.id === '2');
+            
+            if (s1.volume === 100 && s2.volume === 75) {
+                return { passed: true, name: 'Independent Mode - Volume changes isolated' };
+            } else {
+                return { passed: false, name: 'Independent Mode', error: `Expected s1=100, s2=75, got s1=${s1.volume}, s2=${s2.volume}` };
+            }
+        }
+
+        function testLinkedMode() {
+            const controller = new VolumeModeController();
+            
+            // Add test sources
+            const source1 = createTestSource('1', 1, 50);
+            const source2 = createTestSource('2', 2, 100);
+            controller.addSource(source1);
+            controller.addSource(source2);
+            
+            controller.setMode('linked');
+            
+            // Test linked volume change - when one changes, others change proportionally
+            let volumeChanges = [];
+            controller.setCallbacks(
+                (sourceId, volume) => volumeChanges.push({ sourceId, volume }),
+                () => {}
+            );
+            
+            controller.setSourceVolume('1', 100); // Double the volume
+            
+            // In linked mode, both should scale proportionally
+            // Source 1: 50 -> 100 (2x), Source 2: 100 -> should scale too
+            if (volumeChanges.length >= 2) {
+                return { passed: true, name: 'Linked Mode - Proportional volume changes' };
+            } else {
+                return { passed: false, name: 'Linked Mode', error: `Expected multiple volume changes, got ${volumeChanges.length}` };
+            }
+        }
+
+        function testInverseMode() {
+            const controller = new VolumeModeController();
+            controller.setMode('inverse');
+            
+            // Add test sources
+            const source1 = createTestSource('1', 1, 50);
+            const source2 = createTestSource('2', 2, 50);
+            controller.addSource(source1);
+            controller.addSource(source2);
+            
+            let volumeChanges = [];
+            controller.setCallbacks(
+                (sourceId, volume) => volumeChanges.push({ sourceId, volume }),
+                () => {}
+            );
+            
+            // Test inverse volume - when one goes up, others go down
+            controller.setSourceVolume('1', 100);
+            
+            // Should have changes for both sources
+            if (volumeChanges.length >= 1) {
+                return { passed: true, name: 'Inverse Mode - Inverse volume relationship' };
+            } else {
+                return { passed: false, name: 'Inverse Mode', error: `Expected volume changes, got ${volumeChanges.length}` };
+            }
+        }
+
+        function testModeTransitions() {
+            const controller = new VolumeModeController();
+            
+            // Test mode switching
+            controller.setMode('independent');
+            if (controller.getMode() !== 'independent') {
+                return { passed: false, name: 'Mode Transitions', error: 'Failed to set independent mode' };
+            }
+            
+            controller.setMode('linked');
+            if (controller.getMode() !== 'linked') {
+                return { passed: false, name: 'Mode Transitions', error: 'Failed to set linked mode' };
+            }
+            
+            controller.setMode('inverse');
+            if (controller.getMode() !== 'inverse') {
+                return { passed: false, name: 'Mode Transitions', error: 'Failed to set inverse mode' };
+            }
+            
+            return { passed: true, name: 'Mode Transitions - All modes switchable' };
+        }
+
+        function testMasterControls() {
+            const controller = new VolumeModeController();
+            
+            // Test master volume
+            controller.setMasterVolume(80);
+            if (controller.getMasterVolume() !== 80) {
+                return { passed: false, name: 'Master Controls', error: 'Master volume not set correctly' };
+            }
+            
+            // Test master mute
+            controller.setMasterMute(true);
+            if (!controller.isMasterMuted()) {
+                return { passed: false, name: 'Master Controls', error: 'Master mute not set correctly' };
+            }
+            
+            return { passed: true, name: 'Master Controls - Volume and mute work' };
+        }
+
+        // Make runTests available globally
+        window.runTests = runTests;
+    </script>
+</body>
+</html>

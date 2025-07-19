@@ -1,0 +1,38 @@
+{
+  "name": "browser-volume-controller",
+  "version": "1.0.0",
+  "description": "Control individual browser window volumes",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "postinstall": "node scripts/setup.js",
+    "build": "npm run build:extension && npm run build:native",
+    "build:extension": "cd extension && npm run build",
+    "build:native": "cd native-host && npm run build",
+    "clean": "node scripts/setup.js clean",
+    "dev": "concurrently \"npm run dev:extension\" \"npm run dev:native\"",
+    "dev:extension": "cd extension && npm run dev",
+    "dev:native": "cd native-host && npm run dev",
+    "install-native-host": "cd native-host && npm run install-host",
+    "uninstall-native-host": "cd native-host && node scripts/install-host.js uninstall",
+    "native-host-status": "cd native-host && node scripts/install-host.js status",
+    "test": "npm run test:extension && npm run test:native",
+    "test:extension": "cd extension && npm test",
+    "test:native": "cd native-host && npm test",
+    "verify": "node scripts/setup.js verify",
+    "start": "npm run build && npm run install-native-host",
+    "prepare-dev": "npm run clean && npm run build && npm run install-native-host",
+    "dev-tools": "node scripts/dev-tools.js",
+    "extension-status": "node scripts/dev-tools.js check",
+    "load-instructions": "node scripts/dev-tools.js load",
+    "validate-build": "node scripts/validate-build.js"
+  },
+  "workspaces": [
+    "extension",
+    "native-host"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "concurrently": "^8.0.0"
+  }
+}

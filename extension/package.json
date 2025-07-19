@@ -1,0 +1,19 @@
+{
+  "name": "browser-volume-extension",
+  "version": "1.0.0",
+  "description": "Browser extension for volume control",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "typescript": "^5.0.0",
+    "ts-loader": "^9.4.0",
+    "@types/chrome": "^0.0.243",
+    "jest": "^29.0.0"
+  }
+}

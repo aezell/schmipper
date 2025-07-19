@@ -1,0 +1,119 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.yarn-integrity
+
+# Build artifacts
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# TypeScript
+*.js.map
+src/**/*.js
+src/**/*.d.ts
+
+# Browser Extension specific
+extension/dist/
+extension/build/
+extension/web-ext-artifacts/
+*.crx
+*.xpi
+*.zip
+
+# Native Host specific
+native-host/dist/
+native-host/build/
+native-host/bin/
+
+# Platform-specific audio libraries
+*.dylib
+*.so
+*.dll
+*.node
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+/tmp/
+browser-volume-host.log
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output
+.jest
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Native messaging host manifests (generated)
+*.json.generated
+host-manifest-*.json
+
+# Audio test files
+test-audio/
+*.wav
+*.mp3
+*.m4a
+
+# Security sensitive
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+
+# Package manager lock files (keep one, ignore others)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation build
+docs/build/
+docs/.docusaurus/
+
+# Webpack
+.webpack/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Browser profiles (for testing)
+test-profile/
+chrome-profile/
+brave-profile/
