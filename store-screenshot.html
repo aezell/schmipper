@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schmipper Chrome Web Store Screenshot</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            max-width: 1200px;
+        }
+        
+        .extension-popup {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 0;
+            width: 320px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .popup-header {
+            background: #111827;
+            color: #60a5fa;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            border-bottom: 1px solid #374151;
+        }
+        
+        .popup-content {
+            padding: 20px;
+        }
+        
+        .mute-all-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        .tab-item {
+            background: #374151;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #4b5563;
+        }
+        
+        .tab-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .tab-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .youtube-icon {
+            background: #ff0000;
+        }
+        
+        .rumble-icon {
+            background: #85c742;
+        }
+        
+        .tab-title {
+            color: #e5e7eb;
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .tab-url {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            background: #4b5563;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .volume-percentage {
+            color: #e5e7eb;
+            font-size: 12px;
+            min-width: 40px;
+        }
+        
+        .mute-btn {
+            background: #4b5563;
+            color: #e5e7eb;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .info-section {
+            color: white;
+            flex: 1;
+        }
+        
+        .info-section h1 {
+            font-size: 48px;
+            margin: 0 0 20px 0;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        
+        .info-section h2 {
+            font-size: 24px;
+            margin: 0 0 30px 0;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 40px 0;
+        }
+        
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 18px;
+        }
+        
+        .feature-list li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .cta {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="extension-popup">
+            <div class="popup-header">
+                Schmipper
+            </div>
+            <div class="popup-content">
+                <button class="mute-all-btn">Mute All</button>
+                
+                <div class="tab-item">
+                    <div class="tab-info">
+                        <div class="tab-icon youtube-icon"></div>
+                        <div>
+                            <div class="tab-title">(E1) Sending Cars FULL THROTTLE Down Slides in GTA 5!</div>
+                            <div class="tab-url">www.youtube.com</div>
+                        </div>
+                    </div>
+                    <div class="volume-control">
+                        <input type="range" class="volume-slider" value="100" style="background: linear-gradient(to right, #3b82f6 0%, #3b82f6 100%, #4b5563 100%, #4b5563 100%);">
+                        <span class="volume-percentage">100%</span>
+                        <button class="mute-btn">Mute</button>
+                    </div>
+                </div>
+                
+                <div class="tab-item">
+                    <div class="tab-info">
+                        <div class="tab-icon rumble-icon"></div>
+                        <div>
+                            <div class="tab-title">Donkey Kong Bananza episode 1</div>
+                            <div class="tab-url">rumble.com</div>
+                        </div>
+                    </div>
+                    <div class="volume-control">
+                        <input type="range" class="volume-slider" value="100" style="background: linear-gradient(to right, #3b82f6 0%, #3b82f6 100%, #4b5563 100%, #4b5563 100%);">
+                        <span class="volume-percentage">100%</span>
+                        <button class="mute-btn">Mute</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h1>Control Every Tab's Volume</h1>
+            <h2>Fine-tune audio from individual browser tabs</h2>
+            <ul class="feature-list">
+                <li>Individual tab volume control</li>
+                <li>Real-time audio detection</li>
+                <li>One-click mute all tabs</li>
+                <li>Works with YouTube, Spotify, and more</li>
+                <li>Lightweight and fast</li>
+            </ul>
+            <button class="cta">Install Schmipper Extension</button>
+        </div>
+    </div>
+</body>
+</html>
