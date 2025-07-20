@@ -71,62 +71,6 @@
       },
       "description": "Cycle volume modes (Independent → Linked → Inverse)",
       "global": true
-    },
-    "control-tab-1": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+1",
-        "mac": "Command+Shift+1"
-      },
-      "description": "Control first audio tab",
-      "global": true
-    },
-    "control-tab-2": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+2",
-        "mac": "Command+Shift+2"
-      },
-      "description": "Control second audio tab",
-      "global": true
-    },
-    "control-tab-3": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+3",
-        "mac": "Command+Shift+3"
-      },
-      "description": "Control third audio tab",
-      "global": true
-    },
-    "control-tab-4": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+4",
-        "mac": "Command+Shift+4"
-      },
-      "description": "Control fourth audio tab",
-      "global": true
-    },
-    "control-tab-5": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+5",
-        "mac": "Command+Shift+5"
-      },
-      "description": "Control fifth audio tab",
-      "global": true
-    },
-    "reset-volumes": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+0",
-        "mac": "Command+Shift+0"
-      },
-      "description": "Reset all volumes to 50%",
-      "global": true
-    },
-    "focus-mode": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+F",
-        "mac": "Command+Shift+F"
-      },
-      "description": "Focus mode (mute all except current tab)",
-      "global": true
     }
   }
 }
