@@ -167,6 +167,11 @@ export class VolumeModeController {
     sources.forEach(source => {
       source.muted = this.settings.muteAll;
       this.sources.set(source.tabId, source);
+      
+      // Trigger mute callback for each source
+      if (this.muteCallback) {
+        this.muteCallback(source.id, source.muted);
+      }
     });
 
     return this.getSources();

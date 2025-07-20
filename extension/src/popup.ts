@@ -137,8 +137,23 @@ class PopupController {
 
     // Master mute
     this.elements.muteAllButton.addEventListener('click', () => {
-      const newMuted = !this.volumeController.isMasterMuted();
-      this.volumeController.setMasterMute(newMuted);
+      console.log('[Popup] Mute All button clicked!');
+      
+      // Toggle mute for all sources (this will automatically trigger callbacks)
+      const sources = this.volumeController.toggleMuteAll();
+      
+      // Update local audio sources map with new mute states
+      sources.forEach(source => {
+        const existingSource = this.audioSources.get(source.id);
+        if (existingSource) {
+          existingSource.muted = source.muted;
+        }
+      });
+      
+      // Update the UI for all sources
+      this.updateAllSourceMuteDisplays();
+      
+      // Update the mute all button text/state
       this.updateMuteAllButton();
     });
 
@@ -492,6 +507,12 @@ class PopupController {
     }
   }
 
+  private updateAllSourceMuteDisplays(): void {
+    this.audioSources.forEach((source, sourceId) => {
+      this.updateSourceMuteDisplay(sourceId, source.muted);
+    });
+  }
+
   private updateModeUI(): void {
     const modeInfo = this.volumeController.getModeInfo();
     
@@ -509,8 +530,8 @@ class PopupController {
   }
 
   private updateMuteAllButton(): void {
-    const isMuted = this.volumeController.isMasterMuted();
-    if (isMuted) {
+    const allMuted = this.volumeController.isMasterMuted();
+    if (allMuted) {
       this.elements.muteAllButton.classList.add('muted');
       this.elements.muteAllButton.textContent = 'Unmute All';
     } else {
