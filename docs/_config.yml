@@ -1,0 +1,27 @@
+# GitHub Pages configuration for Schmipper
+theme: minima
+title: "SCHMIPPER - Tab Volume Chaos Controller"
+description: "Finally! Control the volume of individual browser tabs like the audio wizard you were meant to be."
+url: "https://schmipper.live"
+baseurl: ""
+
+# GitHub Pages settings
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Exclude files from processing
+exclude:
+  - node_modules/
+  - extension/
+  - native-host/
+  - scripts/
+  - "*.md"
+  - "*.json"
+  - "*.js"
+  - "*.ts"
+
+# Include only the docs directory content
+include:
+  - index.html
+  - style.css

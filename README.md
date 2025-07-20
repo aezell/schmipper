@@ -1,14 +1,16 @@
-# Browser Volume Controller
+# SCHMIPPER - Browser Volume Controller
 
-A cross-platform application to control individual browser window volumes via browser extension + native messaging.
+A cross-platform application to control individual browser tab volumes via browser extension + native messaging.
+
+**🌐 Website**: [Visit Schmipper Website](https://schmipper.live)
 
 ## Project Structure
 
 ```
-browser-volume-controller/
+schmipper/
 ├── extension/           # Browser extension code
 ├── native-host/        # Native messaging host application
-├── docs/              # Documentation and planning
+├── docs/               # Website and documentation
 └── scripts/           # Build and deployment scripts
 ```
 
@@ -47,3 +49,21 @@ If you prefer managing Node.js yourself:
 - **Browser Extension**: Detects audio, provides UI, communicates with native host
 - **Native Host**: Controls system audio levels for specific browser processes
 - **Communication**: JSON messages via Native Messaging API
+
+## Website
+
+The project website is built with neobrutalist design and hosted on GitHub Pages. The website source is in the `docs/` directory.
+
+### Local Website Development
+```bash
+# Serve the website locally
+cd docs
+python -m http.server 8000
+# Visit http://localhost:8000
+```
+
+### GitHub Pages Deployment
+The website automatically deploys when changes are pushed to the main branch. Configure in your repository:
+1. Go to Settings → Pages
+2. Source: Deploy from a branch
+3. Branch: main / docs folder

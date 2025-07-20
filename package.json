@@ -1,7 +1,7 @@
 {
-  "name": "browser-volume-controller",
+  "name": "schmipper",
   "version": "1.0.0",
-  "description": "Control individual browser window volumes",
+  "description": "Control individual browser tab volumes - The Tab Volume Chaos Controller",
   "scripts": {
     "setup": "node scripts/setup.js",
     "postinstall": "node scripts/setup.js",

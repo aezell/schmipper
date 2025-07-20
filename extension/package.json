@@ -1,7 +1,7 @@
 {
-  "name": "browser-volume-extension",
+  "name": "schmipper-extension",
   "version": "1.0.0",
-  "description": "Browser extension for volume control",
+  "description": "Schmipper browser extension for tab volume control",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",
