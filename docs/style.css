@@ -362,59 +362,6 @@ section {
   color: var(--black);
 }
 
-/* SHORTCUTS SECTION */
-.shortcuts {
-  background-color: var(--cyber-yellow);
-  color: var(--black);
-}
-
-.shortcuts .section-title {
-  color: var(--black);
-  text-shadow: 3px 3px 0 var(--hot-pink);
-}
-
-.shortcuts-intro {
-  text-align: center;
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 3rem;
-}
-
-.shortcuts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.shortcut {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background-color: var(--black);
-  color: var(--cyber-yellow);
-  border: var(--border-width) solid var(--hot-pink);
-  box-shadow: 4px 4px 0 var(--electric-blue);
-}
-
-kbd {
-  background-color: var(--dark-gray);
-  color: var(--neon-green);
-  padding: 0.5rem 1rem;
-  border: 2px solid var(--neon-green);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.9rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-.shortcuts-note {
-  text-align: center;
-  margin-top: 2rem;
-  font-style: italic;
-  font-weight: 700;
-}
 
 /* FAQ SECTION */
 .faq {
@@ -486,14 +433,6 @@ code {
     align-items: center;
   }
   
-  .shortcut {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  kbd {
-    min-width: auto;
-  }
 }
 
 /* ANIMATIONS */

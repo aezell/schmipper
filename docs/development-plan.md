@@ -71,19 +71,7 @@
 - Bulk operations: apply changes to multiple sources at once
 **Validation**: Control works correctly with 2+ audio sources
 
-### Task 7: Keyboard Shortcuts
-**Assignable to subagent**: ✅
-**Files**: `extension/src/shortcuts.ts`
-**Goal**: Global keyboard shortcuts for quick volume control
-**Requirements**:
-- Configurable hotkeys for master controls
-- Quick mute/unmute all audio sources
-- Volume up/down for all sources or currently focused tab
-- Toggle between individual and grouped volume control
-- Quick access to most recent audio sources
-**Validation**: Shortcuts work when browser not focused and affect multiple sources
-
-### Task 8: Cross-Browser Compatibility
+### Task 7: Cross-Browser Compatibility
 **Assignable to subagent**: ✅
 **Files**: `extension/manifest-firefox.json`, browser-specific adapters
 **Goal**: Support Firefox and other Chromium browsers
@@ -95,7 +83,7 @@
 
 ## Phase 3: Polish & Distribution (Subagent Tasks)
 
-### Task 9: Windows Audio Support
+### Task 8: Windows Audio Support
 **Assignable to subagent**: ✅
 **Files**: `native-host/src/audio/windows.ts`
 **Goal**: Windows WASAPI integration
@@ -105,7 +93,7 @@
 - Handle Windows audio architecture differences
 **Validation**: Works on Windows 10/11
 
-### Task 10: Error Handling & Logging
+### Task 9: Error Handling & Logging
 **Assignable to subagent**: ✅
 **Files**: `native-host/src/logger.ts`, `extension/src/error-handler.ts`
 **Goal**: Comprehensive error handling and debugging
@@ -117,15 +105,15 @@
 
 ## Task Dependencies
 ```
-Task 1 (UI) → Task 6 (Volume Control) → Task 7 (Shortcuts)
-Task 2 (Audio) → Task 9 (Windows)
+Task 1 (UI) → Task 6 (Volume Control)
+Task 2 (Audio) → Task 8 (Windows)
 Task 3 (Detection) → Task 4 (Messaging) → Task 5 (Build)
-Task 4 (Messaging) → Task 8 (Cross-browser)
-Task 5 (Build) → Task 10 (Error Handling)
+Task 4 (Messaging) → Task 7 (Cross-browser)
+Task 5 (Build) → Task 9 (Error Handling)
 ```
 
 ## Parallel Development Strategy
 - **Week 1**: Tasks 1, 2, 3 (parallel)
 - **Week 2**: Tasks 4, 5 (sequential after week 1)
-- **Week 3**: Tasks 6, 7, 8 (parallel after messaging works)
-- **Week 4**: Tasks 9, 10 (parallel, polish phase)
+- **Week 3**: Tasks 6, 7 (parallel after messaging works)
+- **Week 4**: Tasks 8, 9 (parallel, polish phase)
