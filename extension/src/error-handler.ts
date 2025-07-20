@@ -339,7 +339,6 @@ export class ErrorHandler {
           config.maxDelay
         );
         
-        console.warn(`Retry attempt ${attempt}/${config.maxAttempts} failed, waiting ${delay}ms:`, error);
         await this.sleep(delay);
       }
     }

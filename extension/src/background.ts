@@ -132,7 +132,6 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
   
   // Validate message.state exists
   if (!message.state) {
-    console.warn('Received audio state message without state property:', message);
     return;
   }
   
@@ -164,7 +163,6 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
         sources: Array.from(audioSources.values())
       }).catch(() => {
         // Popup might not be open, ignore error
-        console.debug('Could not notify popup of audio source changes (popup might be closed)');
       });
     }
   } else {
@@ -183,16 +181,14 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
         sources: Array.from(audioSources.values())
       }).catch(() => {
         // Popup might not be open, ignore error
-        console.debug('Could not notify popup of audio source changes (popup might be closed)');
       });
     }
   }
 }
 
 // Map tab to browser process for system-level audio control
-async function mapTabToProcess(tabId: number, _tab: chrome.tabs.Tab): Promise<void> {
+async function mapTabToProcess(_tabId: number, _tab: chrome.tabs.Tab): Promise<void> {
   // Skip process mapping for now - content script control doesn't need it
-  console.debug(`Skipping process mapping for tab ${tabId} - using content script only`);
 }
 
 // Query all tabs for current audio state to catch any sources we might have missed
@@ -240,7 +236,6 @@ async function refreshAllTabAudioState(): Promise<void> {
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (injectionError) {
           // Content script might already be injected, or tab doesn't support injection
-          console.debug(`[Background] Could not inject into tab ${tab.id}:`, injectionError);
         }
         
         // Try to get detailed audio state from content script
@@ -261,16 +256,13 @@ async function refreshAllTabAudioState(): Promise<void> {
             }
           }
         } catch (messageError) {
-          console.debug(`[Background] Could not get audio state from content script in tab ${tab.id}:`, messageError);
         }
       } catch (error) {
-        console.debug(`[Background] Error processing tab ${tab.id}:`, error);
       }
     });
     
     await Promise.allSettled(promises);
   } catch (error) {
-    console.error('[Background] Failed to refresh tab audio state:', error);
   }
 }
 
@@ -291,7 +283,6 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
         sendResponse({ success: true });
       })
       .catch(error => {
-        console.error('Native messaging error:', error);
         sendResponse({ success: false, error: error.message });
       });
     
@@ -328,8 +319,8 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
         volume: volume
       }).then(() => {
         // Skip native host for now - content script should handle everything
-      }).catch((error) => {
-        console.warn(`[Background] Failed to send volume command to content script:`, error);
+      }).catch(() => {
+        // Tab might be unresponsive
       });
         
       sendResponse({ success: true });
@@ -352,8 +343,8 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
         muted: muted
       }).then(() => {
         // Skip native host for now - content script should handle everything
-      }).catch((error) => {
-        console.warn(`[Background] Failed to send mute command to content script:`, error);
+      }).catch(() => {
+        // Tab might be unresponsive
       });
         
       sendResponse({ success: true });
@@ -476,7 +467,6 @@ async function handleVolumeAllShortcut(delta: number): Promise<string> {
       });
       updated++;
     } catch (error) {
-      console.error('Failed to send volume command to native host:', error);
     }
   }
   
@@ -502,7 +492,6 @@ async function handleResetVolumesShortcut(): Promise<string> {
       });
       updated++;
     } catch (error) {
-      console.error('Failed to send volume reset to native host:', error);
     }
   }
   

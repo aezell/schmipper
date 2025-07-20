@@ -66,7 +66,7 @@ export class TabManager {
         }
       });
     } catch (error) {
-      console.error('Failed to load existing tabs:', error);
+      // Failed to load existing tabs
     }
   }
 
@@ -187,7 +187,6 @@ export class TabManager {
   public updateAudioState(tabId: number, audioState: AudioPlaybackState): void {
     const tabInfo = this.tabs.get(tabId);
     if (!tabInfo) {
-      console.warn('Received audio state for unknown tab:', tabId);
       return;
     }
 
@@ -250,7 +249,6 @@ export class TabManager {
           return false;
       }
     } catch (error) {
-      console.error('Failed to set tab volume:', error);
       return false;
     }
   }
@@ -263,7 +261,6 @@ export class TabManager {
       });
       return response?.success || false;
     } catch (error) {
-      console.error('Failed to set independent volume:', error);
       return false;
     }
   }
@@ -278,7 +275,6 @@ export class TabManager {
       const results = await Promise.allSettled(promises);
       return results.some(result => result.status === 'fulfilled' && result.value?.success);
     } catch (error) {
-      console.error('Failed to set linked volume:', error);
       return false;
     }
   }
@@ -296,7 +292,6 @@ export class TabManager {
       const results = await Promise.allSettled(promises);
       return results.some(result => result.status === 'fulfilled' && result.value?.success);
     } catch (error) {
-      console.error('Failed to set inverse volume:', error);
       return false;
     }
   }
@@ -305,7 +300,6 @@ export class TabManager {
     return new Promise((resolve) => {
       chrome.tabs.sendMessage(tabId, message, (response) => {
         if (chrome.runtime.lastError) {
-          console.warn(`Failed to send message to tab ${tabId}:`, chrome.runtime.lastError.message);
           resolve(null);
         } else {
           resolve(response);

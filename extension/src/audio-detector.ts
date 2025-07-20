@@ -269,7 +269,6 @@ export class AudioDetector {
         state: this.currentState
       });
     } catch (error) {
-      console.warn('Failed to send audio state to background script:', error);
     }
   }
 
