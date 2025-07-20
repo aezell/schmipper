@@ -213,56 +213,6 @@ section {
   text-transform: uppercase;
 }
 
-/* MODES SECTION */
-.modes {
-  background-color: var(--electric-blue);
-  color: var(--black);
-}
-
-.modes .section-title {
-  color: var(--white);
-  text-shadow: 3px 3px 0 var(--black);
-}
-
-.modes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.mode-card {
-  padding: 2rem;
-  border: var(--border-width) solid var(--black);
-  box-shadow: 8px 8px 0 var(--dark-gray);
-  position: relative;
-  overflow: hidden;
-}
-
-.mode-card.independent {
-  background-color: var(--hot-pink);
-  color: var(--white);
-}
-
-.mode-card.linked {
-  background-color: var(--cyber-yellow);
-  color: var(--black);
-}
-
-.mode-card.inverse {
-  background-color: var(--neon-green);
-  color: var(--black);
-}
-
-.mode-card h3 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-}
-
-.mode-demo {
-  margin-top: 2rem;
-}
 
 .slider-demo {
   display: flex;
