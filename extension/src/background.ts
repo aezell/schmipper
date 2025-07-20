@@ -14,7 +14,6 @@ interface AudioSource {
   isPlaying: boolean;
 }
 
-import ShortcutsManager from './shortcuts';
 import { 
   getErrorHandler, 
   handleError, 
@@ -46,7 +45,6 @@ let nativePort: any | null = null;
 let audioSources: Map<number, AudioSource> = new Map();
 let tabToProcessMap: Map<number, number> = new Map(); // Maps tab ID to process ID
 let processToSourceMap: Map<number, string> = new Map(); // Maps process ID to source ID
-let shortcutsManager: ShortcutsManager;
 const errorHandler = getErrorHandler();
 
 // Connect to native messaging host
@@ -355,13 +353,6 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
   }
 
 
-  // Handle shortcut actions
-  if (message.action?.startsWith('shortcut-')) {
-    handleShortcutAction(message)
-      .then(result => sendResponse({ success: true, result }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
-    return true;
-  }
 
   // Default case - unknown message
   sendResponse({ success: false, error: 'Unknown message action' });
@@ -389,114 +380,7 @@ chrome.runtime.onStartup.addListener(() => {
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener(() => {
-  // Initialize shortcuts manager
-  shortcutsManager = new ShortcutsManager();
 });
-
-// Handle keyboard shortcuts
-chrome.commands.onCommand.addListener(async (command) => {
-  
-  if (!shortcutsManager) {
-    shortcutsManager = new ShortcutsManager();
-  }
-  
-  await shortcutsManager.handleCommand(command);
-});
-
-// Shortcut action handlers
-async function handleShortcutAction(message: any): Promise<any> {
-  switch (message.action) {
-    case 'shortcut-mute-all':
-      return handleMuteAllShortcut();
-      
-    case 'shortcut-volume-all':
-      return handleVolumeAllShortcut(message.delta);
-      
-      
-    case 'shortcut-reset-volumes':
-      return handleResetVolumesShortcut();
-      
-      
-    default:
-      throw new Error(`Unknown shortcut action: ${message.action}`);
-  }
-}
-
-async function handleMuteAllShortcut(): Promise<string> {
-  const sources = Array.from(audioSources.values());
-  const isCurrentlyMuted = sources.length > 0 && sources.every(s => s.muted);
-  const newMutedState = !isCurrentlyMuted;
-  
-  // Apply to all audio sources
-  for (const source of sources) {
-    source.muted = newMutedState;
-    audioSources.set(source.tabId, source);
-    
-    // Send to native host
-    try {
-      const port = await connectToNativeHost();
-      port.postMessage({
-        action: 'setTabMute',
-        tabId: source.tabId,
-        muted: newMutedState
-      });
-    } catch (error) {
-      // Failed to send to native host
-    }
-  }
-  
-  return newMutedState ? 'All sources muted' : 'All sources unmuted';
-}
-
-async function handleVolumeAllShortcut(delta: number): Promise<string> {
-  const sources = Array.from(audioSources.values());
-  let updated = 0;
-  
-  for (const source of sources) {
-    const newVolume = Math.max(0, Math.min(100, source.volume + delta));
-    source.volume = newVolume;
-    audioSources.set(source.tabId, source);
-    
-    // Send to native host
-    try {
-      const port = await connectToNativeHost();
-      port.postMessage({
-        action: 'setTabVolume',
-        tabId: source.tabId,
-        volume: newVolume
-      });
-      updated++;
-    } catch (error) {
-    }
-  }
-  
-  return `Volume ${delta > 0 ? 'increased' : 'decreased'} for ${updated} sources`;
-}
-
-
-async function handleResetVolumesShortcut(): Promise<string> {
-  const sources = Array.from(audioSources.values());
-  let updated = 0;
-  
-  for (const source of sources) {
-    source.volume = 50;
-    audioSources.set(source.tabId, source);
-    
-    // Send to native host
-    try {
-      const port = await connectToNativeHost();
-      port.postMessage({
-        action: 'setTabVolume',
-        tabId: source.tabId,
-        volume: 50
-      });
-      updated++;
-    } catch (error) {
-    }
-  }
-  
-  return `Reset ${updated} sources to 50% volume`;
-}
 
 
 export {};

@@ -1,5 +1,3 @@
-import ShortcutsManager, { ShortcutCommand } from './shortcuts';
-
 interface AudioSource {
   id: string;
   tabId: number;
@@ -20,7 +18,6 @@ interface VolumeMessage {
 
 class PopupController {
   private audioSources: Map<string, AudioSource> = new Map();
-  private shortcutsManager: ShortcutsManager;
 
   // DOM elements
   private elements: {
@@ -40,13 +37,9 @@ class PopupController {
     errorsPanel: HTMLDivElement;
     errorsList: HTMLDivElement;
     clearErrors: HTMLButtonElement;
-    shortcutsSection: HTMLDivElement;
-    shortcutsToggle: HTMLButtonElement;
-    shortcutsList: HTMLDivElement;
   };
 
   constructor() {
-    this.shortcutsManager = new ShortcutsManager();
     
     this.elements = {
       muteAllButton: document.getElementById('mute-all') as HTMLButtonElement,
@@ -64,14 +57,10 @@ class PopupController {
       statusText: document.getElementById('status-text') as HTMLSpanElement,
       errorsPanel: document.getElementById('errors-panel') as HTMLDivElement,
       errorsList: document.getElementById('errors-list') as HTMLDivElement,
-      clearErrors: document.getElementById('clear-errors') as HTMLButtonElement,
-      shortcutsSection: document.getElementById('shortcuts-section') as HTMLDivElement,
-      shortcutsToggle: document.getElementById('shortcuts-toggle') as HTMLButtonElement,
-      shortcutsList: document.getElementById('shortcuts-list') as HTMLDivElement
+      clearErrors: document.getElementById('clear-errors') as HTMLButtonElement
     };
 
     this.initializeEventListeners();
-    this.initializeShortcuts();
     this.initialize();
   }
 
@@ -453,114 +442,6 @@ class PopupController {
         }
       });
     });
-  }
-
-  // Shortcuts functionality
-  private initializeShortcuts(): void {
-    // Initialize shortcuts toggle
-    if (this.elements.shortcutsToggle) {
-      this.elements.shortcutsToggle.addEventListener('click', () => {
-        this.toggleShortcutsSection();
-      });
-    }
-
-    this.renderShortcuts();
-  }
-
-  private toggleShortcutsSection(): void {
-    if (!this.elements.shortcutsSection) return;
-
-    const isHidden = this.elements.shortcutsSection.classList.contains('hidden');
-    
-    if (isHidden) {
-      this.elements.shortcutsSection.classList.remove('hidden');
-      this.elements.shortcutsToggle.textContent = 'Hide Shortcuts';
-      this.renderShortcuts();
-    } else {
-      this.elements.shortcutsSection.classList.add('hidden');
-      this.elements.shortcutsToggle.textContent = 'Show Shortcuts';
-    }
-  }
-
-  private renderShortcuts(): void {
-    if (!this.elements.shortcutsList) return;
-
-    this.elements.shortcutsList.innerHTML = '';
-
-    const coreShortcuts = this.shortcutsManager.getShortcutsByCategory('core');
-    const advancedShortcuts = this.shortcutsManager.getShortcutsByCategory('advanced');
-
-    // Render core shortcuts
-    if (coreShortcuts.length > 0) {
-      const coreHeader = document.createElement('h4');
-      coreHeader.textContent = 'Core Shortcuts';
-      coreHeader.className = 'shortcuts-category-header';
-      this.elements.shortcutsList.appendChild(coreHeader);
-
-      coreShortcuts.forEach(shortcut => {
-        const shortcutElement = this.createShortcutElement(shortcut);
-        this.elements.shortcutsList.appendChild(shortcutElement);
-      });
-    }
-
-    // Render advanced shortcuts
-    if (advancedShortcuts.length > 0) {
-      const advancedHeader = document.createElement('h4');
-      advancedHeader.textContent = 'Advanced Shortcuts';
-      advancedHeader.className = 'shortcuts-category-header';
-      this.elements.shortcutsList.appendChild(advancedHeader);
-
-      advancedShortcuts.forEach(shortcut => {
-        const shortcutElement = this.createShortcutElement(shortcut);
-        this.elements.shortcutsList.appendChild(shortcutElement);
-      });
-    }
-  }
-
-  private createShortcutElement(shortcut: ShortcutCommand): HTMLDivElement {
-    const shortcutDiv = document.createElement('div');
-    shortcutDiv.className = 'shortcut-item';
-    if (!shortcut.enabled) shortcutDiv.classList.add('disabled');
-
-    const shortcutInfo = document.createElement('div');
-    shortcutInfo.className = 'shortcut-info';
-
-    const shortcutDescription = document.createElement('div');
-    shortcutDescription.className = 'shortcut-description';
-    shortcutDescription.textContent = shortcut.description;
-
-    const shortcutKey = document.createElement('div');
-    shortcutKey.className = 'shortcut-key';
-    shortcutKey.textContent = this.shortcutsManager.getActiveKey(shortcut);
-
-    shortcutInfo.appendChild(shortcutDescription);
-    shortcutInfo.appendChild(shortcutKey);
-
-    const shortcutControls = document.createElement('div');
-    shortcutControls.className = 'shortcut-controls';
-
-    const toggleButton = document.createElement('button');
-    toggleButton.className = 'shortcut-toggle';
-    toggleButton.textContent = shortcut.enabled ? 'Disable' : 'Enable';
-    toggleButton.addEventListener('click', () => {
-      this.toggleShortcut(shortcut.id);
-    });
-
-    shortcutControls.appendChild(toggleButton);
-
-    shortcutDiv.appendChild(shortcutInfo);
-    shortcutDiv.appendChild(shortcutControls);
-
-    return shortcutDiv;
-  }
-
-  private async toggleShortcut(shortcutId: string): Promise<void> {
-    const shortcut = this.shortcutsManager.getShortcuts().find(s => s.id === shortcutId);
-    if (!shortcut) return;
-
-    const newEnabled = !shortcut.enabled;
-    await this.shortcutsManager.updateShortcut(shortcutId, { enabled: newEnabled });
-    this.renderShortcuts();
   }
 }
 

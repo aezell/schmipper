@@ -185,12 +185,11 @@ ls ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/
 5. **Build System**: Automated build and installation process
 
 ### Phase 2: Advanced Features  
-6. **Keyboard Shortcuts**: Global hotkeys for quick volume control
-7. **Cross-Browser**: Firefox and other Chromium browser support
+6. **Cross-Browser**: Firefox and other Chromium browser support
 
 ### Phase 3: Polish & Distribution
-8. **Windows Support**: WASAPI integration
-9. **Error Handling**: Comprehensive error handling and logging
+7. **Windows Support**: WASAPI integration
+8. **Error Handling**: Comprehensive error handling and logging
 
 ## Browser Compatibility
 
