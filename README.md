@@ -4,6 +4,12 @@ A cross-platform application to control individual browser tab volumes via brows
 
 **🌐 Website**: [Visit Schmipper Website](https://schmipper.live)
 
+## Interface Preview
+
+![Schmipper Extension Interface](schmipper-interface.png)
+
+The Schmipper extension provides a clean, dark interface showing all browser tabs with active audio. Users can adjust individual tab volumes with sliders or use the "Mute All" button for quick control.
+
 ## Project Structure
 
 ```
