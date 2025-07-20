@@ -56,8 +56,7 @@ schmipper/
 │   │   ├── background.ts     # Native messaging coordination
 │   │   ├── content.ts        # Audio detection in tabs
 │   │   ├── popup.ts          # UI controller
-│   │   ├── audio-detector.ts # HTML5 + Web Audio monitoring
-│   │   └── volume-modes.ts   # Independent/Linked/Inverse logic
+│   │   └── audio-detector.ts # HTML5 + Web Audio monitoring
 │   ├── dist/                 # Built extension (git-ignored)
 │   └── manifest.json         # Extension configuration
 ├── native-host/           # Native messaging host (Node.js)
@@ -82,13 +81,7 @@ schmipper/
 - **Tab lifecycle**: Handle tab navigation, refresh, and closure gracefully
 - **Process mapping**: Map browser tabs to system audio processes/streams
 
-### 2. Volume Control Modes (extension/src/volume-modes.ts)
-- **Independent**: Each audio source controlled separately (default)
-- **Linked**: All sources move together, maintaining relative levels
-- **Inverse**: When one source goes up, others go down proportionally
-- **Smart grouping**: Option to group by domain (e.g., all YouTube tabs together)
-
-### 3. Native Audio Control (native-host/src/audio/)
+### 2. Native Audio Control (native-host/src/audio/)
 - **macOS**: Core Audio integration for per-tab/process volume control
 - **Windows**: WASAPI integration (planned)
 - **Process detection**: Map browser tabs to specific audio streams
@@ -192,13 +185,12 @@ ls ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/
 5. **Build System**: Automated build and installation process
 
 ### Phase 2: Advanced Features  
-6. **Volume Modes**: Independent, Linked, Inverse modes
-7. **Keyboard Shortcuts**: Global hotkeys for quick volume control
-8. **Cross-Browser**: Firefox and other Chromium browser support
+6. **Keyboard Shortcuts**: Global hotkeys for quick volume control
+7. **Cross-Browser**: Firefox and other Chromium browser support
 
 ### Phase 3: Polish & Distribution
-9. **Windows Support**: WASAPI integration
-10. **Error Handling**: Comprehensive error handling and logging
+8. **Windows Support**: WASAPI integration
+9. **Error Handling**: Comprehensive error handling and logging
 
 ## Browser Compatibility
 
@@ -224,7 +216,6 @@ ls ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/
 
 ### For Audio Features
 - `extension/src/audio-detector.ts` - Audio detection logic
-- `extension/src/volume-modes.ts` - Volume control modes
 - `native-host/src/audio/macos.ts` - macOS audio control
 - `native-host/src/audio/index.ts` - Platform audio abstraction
 

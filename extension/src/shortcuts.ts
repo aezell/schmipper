@@ -19,9 +19,8 @@ export class ShortcutsManager {
   private shortcuts: Map<string, ShortcutCommand> = new Map();
   private actionHandlers: Map<string, (params?: any) => Promise<void>> = new Map();
 
-  // Default shortcuts configuration
+  // Default shortcuts configuration - Chrome Extensions API limits us to 4 global shortcuts
   private readonly defaultShortcuts: ShortcutCommand[] = [
-    // Core shortcuts
     {
       id: 'mute-all',
       description: 'Mute/unmute all audio sources',
@@ -44,61 +43,11 @@ export class ShortcutsManager {
       category: 'core'
     },
     {
-      id: 'cycle-modes',
-      description: 'Cycle volume modes (Independent → Linked → Inverse)',
-      defaultKey: 'Ctrl+Shift+Tab',
-      enabled: true,
-      category: 'core'
-    },
-    // Advanced shortcuts
-    {
-      id: 'control-tab-1',
-      description: 'Control first audio tab',
-      defaultKey: 'Ctrl+Shift+1',
-      enabled: true,
-      category: 'advanced'
-    },
-    {
-      id: 'control-tab-2',
-      description: 'Control second audio tab',
-      defaultKey: 'Ctrl+Shift+2',
-      enabled: true,
-      category: 'advanced'
-    },
-    {
-      id: 'control-tab-3',
-      description: 'Control third audio tab',
-      defaultKey: 'Ctrl+Shift+3',
-      enabled: true,
-      category: 'advanced'
-    },
-    {
-      id: 'control-tab-4',
-      description: 'Control fourth audio tab',
-      defaultKey: 'Ctrl+Shift+4',
-      enabled: true,
-      category: 'advanced'
-    },
-    {
-      id: 'control-tab-5',
-      description: 'Control fifth audio tab',
-      defaultKey: 'Ctrl+Shift+5',
-      enabled: true,
-      category: 'advanced'
-    },
-    {
       id: 'reset-volumes',
       description: 'Reset all volumes to 50%',
-      defaultKey: 'Ctrl+Shift+0',
+      defaultKey: 'Ctrl+Shift+R',
       enabled: true,
-      category: 'advanced'
-    },
-    {
-      id: 'focus-mode',
-      description: 'Focus mode (mute all except current tab)',
-      defaultKey: 'Ctrl+Shift+F',
-      enabled: true,
-      category: 'advanced'
+      category: 'core'
     }
   ];
 
@@ -130,7 +79,6 @@ export class ShortcutsManager {
       const result = await chrome.storage.local.get(['customShortcuts']);
       return result.customShortcuts || [];
     } catch (error) {
-      console.error('Failed to load stored shortcuts:', error);
       return [];
     }
   }
@@ -147,7 +95,6 @@ export class ShortcutsManager {
 
       await chrome.storage.local.set({ customShortcuts });
     } catch (error) {
-      console.error('Failed to save shortcuts:', error);
     }
   }
 
@@ -155,7 +102,6 @@ export class ShortcutsManager {
     // Chrome Extensions API doesn't support dynamic command registration
     // Commands must be defined in manifest.json
     // This method is a placeholder for future Chrome API enhancements
-    console.log('Shortcuts registered:', Array.from(this.shortcuts.keys()));
   }
 
   private setupActionHandlers(): void {
@@ -202,7 +148,6 @@ export class ShortcutsManager {
   public async handleCommand(commandId: string): Promise<void> {
     const shortcut = this.shortcuts.get(commandId);
     if (!shortcut || !shortcut.enabled) {
-      console.warn(`Shortcut ${commandId} is disabled or not found`);
       return;
     }
 
@@ -211,11 +156,8 @@ export class ShortcutsManager {
       try {
         await handler();
       } catch (error) {
-        console.error(`Error executing shortcut ${commandId}:`, error);
         this.showFeedback(`❌ Error executing ${shortcut.description}`);
       }
-    } else {
-      console.warn(`No handler found for shortcut: ${commandId}`);
     }
   }
 
@@ -273,7 +215,7 @@ export class ShortcutsManager {
     });
   }
 
-  private showFeedback(message: string): void {
+  private showFeedback(_message: string): void {
     // Show visual feedback through badge or notification
     chrome.action.setBadgeText({ text: '!' });
     chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
@@ -282,8 +224,6 @@ export class ShortcutsManager {
     setTimeout(() => {
       chrome.action.setBadgeText({ text: '' });
     }, 2000);
-
-    console.log('Shortcut feedback:', message);
   }
 
   // Generate manifest commands configuration

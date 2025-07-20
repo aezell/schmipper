@@ -10,7 +10,7 @@
 - Dynamic list of audio sources (tabs/windows currently playing audio)
 - Individual volume slider for each audio source (0-100%)
 - Tab title/favicon display for easy identification
-- Mode controls: Independent, Linked, Inverse (apply to all detected sources)
+- Volume control options for managing multiple audio sources
 - Master volume controls and mute-all functionality
 - Real-time updates when audio starts/stops in tabs
 **Validation**: Extension popup dynamically shows/hides audio sources and controls work
@@ -60,17 +60,16 @@
 
 ## Phase 2: Advanced Features (Subagent Tasks)
 
-### Task 6: Volume Modes Implementation
+### Task 6: Volume Control Enhancement
 **Assignable to subagent**: ✅
-**Files**: `extension/src/volume-modes.ts`
-**Goal**: Implement linked and inverse volume modes for multiple audio sources
+**Files**: `extension/src/volume-control.ts`
+**Goal**: Implement enhanced volume control for multiple audio sources
 **Requirements**:
-- Independent mode: each audio source controlled separately
-- Linked mode: all audio sources move together (maintaining relative levels)
-- Inverse mode: when one goes up, others go down proportionally
+- Individual control: each audio source controlled separately
 - Master controls: mute all, volume up/down all sources
 - Smart grouping: option to group by domain/site
-**Validation**: All modes work correctly with 2+ audio sources
+- Bulk operations: apply changes to multiple sources at once
+**Validation**: Control works correctly with 2+ audio sources
 
 ### Task 7: Keyboard Shortcuts
 **Assignable to subagent**: ✅
@@ -80,7 +79,7 @@
 - Configurable hotkeys for master controls
 - Quick mute/unmute all audio sources
 - Volume up/down for all sources or currently focused tab
-- Cycle through volume modes (independent → linked → inverse)
+- Toggle between individual and grouped volume control
 - Quick access to most recent audio sources
 **Validation**: Shortcuts work when browser not focused and affect multiple sources
 
@@ -118,7 +117,7 @@
 
 ## Task Dependencies
 ```
-Task 1 (UI) → Task 6 (Modes) → Task 7 (Shortcuts)
+Task 1 (UI) → Task 6 (Volume Control) → Task 7 (Shortcuts)
 Task 2 (Audio) → Task 9 (Windows)
 Task 3 (Detection) → Task 4 (Messaging) → Task 5 (Build)
 Task 4 (Messaging) → Task 8 (Cross-browser)

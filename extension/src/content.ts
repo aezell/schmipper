@@ -12,14 +12,12 @@ class AudioDetector {
   private hasEverHadAudio: boolean = false;
 
   constructor() {
-    console.log('[Schmipper] AudioDetector initializing...');
     this.initialize();
   }
 
   private initialize(): void {
     // Check if extension context is valid before setting up listeners
     if (!chrome.runtime?.id) {
-      console.debug('[Schmipper] Extension context invalidated, skipping initialization');
       return;
     }
 
@@ -39,7 +37,6 @@ class AudioDetector {
   }
 
   private handleMessage(message: any, sendResponse: (response: any) => void): void {
-    console.log(`[Schmipper] Content script received message:`, message);
     try {
       switch (message.action) {
         case 'getAudioState':
@@ -80,7 +77,6 @@ class AudioDetector {
           sendResponse({ success: false, error: 'Unknown action' });
       }
     } catch (error) {
-      console.error('[Schmipper] Error handling message:', error);
       sendResponse({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -118,9 +114,7 @@ class AudioDetector {
         this.addAudioElement(mediaElement);
       });
       
-      console.log(`[Schmipper] Scanned and found ${mediaElements.length} existing media elements`);
     } catch (error) {
-      console.log('[Schmipper] Document not ready for scanning, will retry when observer starts');
     }
   }
 
@@ -166,9 +160,7 @@ class AudioDetector {
           childList: true,
           subtree: true
         });
-        console.log('[Schmipper] MutationObserver started on document.body');
       } else {
-        console.log('[Schmipper] document.body not ready, retrying...');
         setTimeout(startObserver, 100);
       }
     };
@@ -273,7 +265,6 @@ class AudioDetector {
     // Connect gain node to destination by default
     gainNode.connect(context.destination);
     
-    console.log('[Schmipper] Intercepted AudioContext with gain control');
     this.notifyAudioState();
   }
 
@@ -298,7 +289,6 @@ class AudioDetector {
     // Return true if we currently have audio OR if we've had audio before and are currently muted by extension
     const result = hasCurrentAudio || (this.hasEverHadAudio && this.currentMuted);
     
-    console.log(`[Schmipper] hasActiveAudio: hasPlaying=${hasPlayingMedia}, hasWebAudio=${hasWebAudio}, hasEverHad=${this.hasEverHadAudio}, muted=${this.currentMuted}, result=${result}`);
     
     return result;
   }
@@ -307,23 +297,18 @@ class AudioDetector {
     const normalizedVolume = Math.max(0, Math.min(1, volume / 100));
     this.currentVolume = this.currentMuted ? 0 : normalizedVolume;
     
-    console.log(`[Schmipper] Setting volume to ${volume}% (normalized: ${normalizedVolume})`);
-    console.log(`[Schmipper] Found ${this.audioElements.size} HTML5 elements, ${this.gainNodes.size} Web Audio contexts`);
     
     // Control HTML5 media elements
     let htmlElementsControlled = 0;
     this.audioElements.forEach(element => {
-      const oldVolume = element.volume;
       element.volume = normalizedVolume;
       htmlElementsControlled++;
-      console.log(`[Schmipper] HTML5 element volume: ${oldVolume} -> ${element.volume}`);
     });
 
     // Control Web Audio API contexts via gain nodes
     let webAudioControlled = 0;
     this.gainNodes.forEach((gainNode, context) => {
       try {
-        const oldGainValue = gainNode.gain.value;
         // Use exponential ramping for smooth volume changes
         const currentTime = context.currentTime;
         gainNode.gain.cancelScheduledValues(currentTime);
@@ -333,16 +318,13 @@ class AudioDetector {
           currentTime + 0.1 // 100ms ramp time
         );
         webAudioControlled++;
-        console.log(`[Schmipper] Web Audio gain: ${oldGainValue} -> target: ${this.currentVolume}`);
       } catch (error) {
         // Fallback to immediate value change if ramping fails
         gainNode.gain.value = this.currentVolume;
         webAudioControlled++;
-        console.log(`[Schmipper] Web Audio gain (immediate): ${gainNode.gain.value}`);
       }
     });
 
-    console.log(`[Schmipper] Controlled ${htmlElementsControlled} HTML5 elements, ${webAudioControlled} Web Audio contexts`);
   }
 
   private setMute(muted: boolean): void {
@@ -377,7 +359,6 @@ class AudioDetector {
       }
     });
 
-    console.log(`[Schmipper] Set mute to ${muted}`);
     
     // Notify audio state change after mute operation
     this.notifyAudioState();
@@ -401,7 +382,6 @@ class AudioDetector {
     
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
-      console.debug('[Schmipper] Extension context invalidated, skipping notification');
       return;
     }
     
@@ -416,28 +396,22 @@ class AudioDetector {
       }).catch(error => {
         // Check for context invalidation
         if (error.message?.includes('Extension context invalidated')) {
-          console.debug('[Schmipper] Extension context invalidated during message send');
           return;
         }
         // Ignore other errors if background script is not available
-        console.debug('[Schmipper] Failed to notify audio state:', error);
       });
     } catch (error) {
-      console.debug('[Schmipper] Runtime not available:', error);
     }
   }
 }
 
 // Initialize audio detector when script loads
-console.log('[Schmipper] Content script loading...', window.location.href);
 
 // Initialize immediately since we're running at document_start
-console.log('[Schmipper] Initializing AudioDetector immediately');
 (window as any).audioDetector = new AudioDetector();
 
 // Also set up Web Audio API interception as early as possible
 if (typeof window !== 'undefined') {
-  console.log('[Schmipper] Setting up early Web Audio API interception');
   const detector = (window as any).audioDetector;
   if (detector) {
     // Call detectWebAudio again to ensure it's set up before any sites create AudioContext

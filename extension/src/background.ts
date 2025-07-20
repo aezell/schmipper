@@ -14,7 +14,6 @@ interface AudioSource {
   isPlaying: boolean;
 }
 
-import { VolumeMode, VolumeModeController } from './volume-modes';
 import ShortcutsManager from './shortcuts';
 import { 
   getErrorHandler, 
@@ -29,7 +28,6 @@ interface VolumeMessage {
   tabId?: number;
   volume?: number;
   muted?: boolean;
-  mode?: VolumeMode;
 }
 
 // VolumeMessage interface for future native host communication
@@ -48,8 +46,6 @@ let nativePort: any | null = null;
 let audioSources: Map<number, AudioSource> = new Map();
 let tabToProcessMap: Map<number, number> = new Map(); // Maps tab ID to process ID
 let processToSourceMap: Map<number, string> = new Map(); // Maps process ID to source ID
-let currentVolumeMode: VolumeMode = 'independent';
-let volumeController: VolumeModeController = new VolumeModeController();
 let shortcutsManager: ShortcutsManager;
 const errorHandler = getErrorHandler();
 
@@ -75,7 +71,6 @@ function connectToNativeHost(): Promise<chrome.runtime.Port> {
           nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
           
           nativePort.onMessage.addListener((message: any) => {
-            console.log('Received from native host:', message);
             // Forward messages to popup/content scripts
             chrome.runtime.sendMessage({ source: 'nativeHost', data: message }).catch(() => {
               // Popup might not be open, ignore error
@@ -84,7 +79,6 @@ function connectToNativeHost(): Promise<chrome.runtime.Port> {
 
           nativePort.onDisconnect.addListener(() => {
             const lastError = chrome.runtime.lastError?.message || 'Unknown disconnection';
-            console.log('Native host disconnected:', lastError);
             
             handleError(
               new Error(lastError),
@@ -159,14 +153,12 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
     };
     
     audioSources.set(tabId, audioSource);
-    console.log(`Audio started in tab ${tabId}: ${audioSource.title} (volume: ${audioSource.volume}%, muted: ${audioSource.muted})`);
     
     // Map tab to browser process
     await mapTabToProcess(tabId, sender.tab);
     
     // Only notify popup if this is a new source
     if (!hadSource) {
-      console.log(`[Background] New audio source added, notifying popup`);
       chrome.runtime.sendMessage({
         action: 'audioSourcesUpdated',
         sources: Array.from(audioSources.values())
@@ -183,11 +175,9 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
       tabToProcessMap.delete(tabId);
       processToSourceMap.delete(processId);
     }
-    console.log(`Audio stopped in tab ${tabId}`);
     
     // Only notify popup if we actually removed a source
     if (hadSource) {
-      console.log(`[Background] Audio source removed, notifying popup`);
       chrome.runtime.sendMessage({
         action: 'audioSourcesUpdated',
         sources: Array.from(audioSources.values())
@@ -208,7 +198,6 @@ async function mapTabToProcess(tabId: number, _tab: chrome.tabs.Tab): Promise<vo
 // Query all tabs for current audio state to catch any sources we might have missed
 async function refreshAllTabAudioState(): Promise<void> {
   try {
-    console.log('[Background] Refreshing audio state for all tabs...');
     const tabs = await chrome.tabs.query({});
     
     // First, find tabs that Chrome already knows have audio
@@ -217,7 +206,6 @@ async function refreshAllTabAudioState(): Promise<void> {
       (tab as any).mutedInfo?.reason === 'user' // User has interacted with tab audio
     );
     
-    console.log(`[Background] Chrome detected ${audioTabs.length} tabs with audio out of ${tabs.length} total tabs`);
     
     // Process all tabs, but prioritize the ones Chrome knows have audio
     const tabsToProcess = [...audioTabs, ...tabs.filter(tab => !audioTabs.includes(tab))];
@@ -230,7 +218,6 @@ async function refreshAllTabAudioState(): Promise<void> {
       try {
         // For tabs Chrome knows have audio, add them immediately as a fallback
         if (tab.audible === true) {
-          console.log(`[Background] Chrome detected audio in tab ${tab.id}: ${tab.title}`);
           await handleAudioStateChange({
             action: 'audioStateChanged',
             tabId: tab.id,
@@ -248,7 +235,6 @@ async function refreshAllTabAudioState(): Promise<void> {
             target: { tabId: tab.id },
             files: ['content.js']
           });
-          console.log(`[Background] Injected content script into tab ${tab.id}`);
           
           // Wait a moment for script to initialize
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -261,7 +247,6 @@ async function refreshAllTabAudioState(): Promise<void> {
         try {
           const response = await chrome.tabs.sendMessage(tab.id, { action: 'getAudioState' });
           if (response?.success && response?.hasAudio) {
-            console.log(`[Background] Content script confirmed audio in tab ${tab.id}: ${tab.title}`);
             // Update the source if we haven't already added it
             if (!audioSources.has(tab.id)) {
               await handleAudioStateChange({
@@ -284,7 +269,6 @@ async function refreshAllTabAudioState(): Promise<void> {
     });
     
     await Promise.allSettled(promises);
-    console.log(`[Background] Completed audio state refresh. Found ${audioSources.size} audio sources.`);
   } catch (error) {
     console.error('[Background] Failed to refresh tab audio state:', error);
   }
@@ -293,7 +277,6 @@ async function refreshAllTabAudioState(): Promise<void> {
 
 // Handle messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage | any, sender, sendResponse) => {
-  console.log('Background received message:', message);
 
   if (message.action === 'audioStateChanged') {
     handleAudioStateChange(message as AudioStateMessage, sender);
@@ -340,15 +323,11 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
       audioSources.set(tabId, source);
 
       // Send to content script first (immediate web-based control)
-      console.log(`[Background] Sending setVolume message to tab ${tabId} with volume ${volume}`);
       chrome.tabs.sendMessage(tabId, {
         action: 'setVolume',
         volume: volume
-      }).then((response) => {
-        console.log(`[Background] Content script response:`, response);
-        
+      }).then(() => {
         // Skip native host for now - content script should handle everything
-        console.debug(`[Background] Content script handled volume control successfully`);
       }).catch((error) => {
         console.warn(`[Background] Failed to send volume command to content script:`, error);
       });
@@ -368,15 +347,11 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
       audioSources.set(tabId, source);
 
       // Send to content script first (immediate web-based control)
-      console.log(`[Background] Sending setMute message to tab ${tabId} with muted ${muted}`);
       chrome.tabs.sendMessage(tabId, {
         action: 'setMute',
         muted: muted
-      }).then((response) => {
-        console.log(`[Background] Content script mute response:`, response);
-        
+      }).then(() => {
         // Skip native host for now - content script should handle everything
-        console.debug(`[Background] Content script handled mute control successfully`);
       }).catch((error) => {
         console.warn(`[Background] Failed to send mute command to content script:`, error);
       });
@@ -388,12 +363,6 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
     return true;
   }
 
-  if (message.action === 'setMode') {
-    currentVolumeMode = message.mode || 'independent';
-    console.log('Volume mode changed to:', currentVolumeMode);
-    sendResponse({ success: true });
-    return true;
-  }
 
   // Handle shortcut actions
   if (message.action?.startsWith('shortcut-')) {
@@ -411,7 +380,6 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
 // Clean up audio sources when tabs are removed
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (audioSources.has(tabId)) {
-    console.log(`Cleaning up audio source for removed tab ${tabId}`);
     audioSources.delete(tabId);
   }
 });
@@ -420,26 +388,22 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url && audioSources.has(tabId)) {
     // Tab navigated to new URL, audio likely stopped
-    console.log(`Tab ${tabId} navigated, removing audio source`);
     audioSources.delete(tabId);
   }
 });
 
 // Initialize on startup
 chrome.runtime.onStartup.addListener(() => {
-  console.log('Browser Volume Controller starting up - content script mode');
 });
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Browser Volume Controller installed');
   // Initialize shortcuts manager
   shortcutsManager = new ShortcutsManager();
 });
 
 // Handle keyboard shortcuts
 chrome.commands.onCommand.addListener(async (command) => {
-  console.log('Command received:', command);
   
   if (!shortcutsManager) {
     shortcutsManager = new ShortcutsManager();
@@ -457,17 +421,10 @@ async function handleShortcutAction(message: any): Promise<any> {
     case 'shortcut-volume-all':
       return handleVolumeAllShortcut(message.delta);
       
-    case 'shortcut-cycle-modes':
-      return handleCycleModeShortcut();
       
     case 'shortcut-reset-volumes':
       return handleResetVolumesShortcut();
       
-    case 'shortcut-focus-mode':
-      return handleFocusModeShortcut();
-      
-    case 'shortcut-tab-control':
-      return handleTabControlShortcut(message.tabIndex);
       
     default:
       throw new Error(`Unknown shortcut action: ${message.action}`);
@@ -475,31 +432,29 @@ async function handleShortcutAction(message: any): Promise<any> {
 }
 
 async function handleMuteAllShortcut(): Promise<string> {
-  const sources = volumeController.toggleMuteAll();
-  const isMuted = volumeController.isMasterMuted();
+  const sources = Array.from(audioSources.values());
+  const isCurrentlyMuted = sources.length > 0 && sources.every(s => s.muted);
+  const newMutedState = !isCurrentlyMuted;
   
   // Apply to all audio sources
   for (const source of sources) {
-    if (audioSources.has(source.tabId)) {
-      const audioSource = audioSources.get(source.tabId)!;
-      audioSource.muted = source.muted;
-      audioSources.set(source.tabId, audioSource);
-      
-      // Send to native host
-      try {
-        const port = await connectToNativeHost();
-        port.postMessage({
-          action: 'setTabMute',
-          tabId: source.tabId,
-          muted: source.muted
-        });
-      } catch (error) {
-        console.error('Failed to send mute command to native host:', error);
-      }
+    source.muted = newMutedState;
+    audioSources.set(source.tabId, source);
+    
+    // Send to native host
+    try {
+      const port = await connectToNativeHost();
+      port.postMessage({
+        action: 'setTabMute',
+        tabId: source.tabId,
+        muted: newMutedState
+      });
+    } catch (error) {
+      // Failed to send to native host
     }
   }
   
-  return isMuted ? 'All sources muted' : 'All sources unmuted';
+  return newMutedState ? 'All sources muted' : 'All sources unmuted';
 }
 
 async function handleVolumeAllShortcut(delta: number): Promise<string> {
@@ -528,17 +483,6 @@ async function handleVolumeAllShortcut(delta: number): Promise<string> {
   return `Volume ${delta > 0 ? 'increased' : 'decreased'} for ${updated} sources`;
 }
 
-async function handleCycleModeShortcut(): Promise<string> {
-  const modes: VolumeMode[] = ['independent', 'linked', 'inverse'];
-  const currentIndex = modes.indexOf(currentVolumeMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  const newMode = modes[nextIndex];
-  
-  volumeController.setMode(newMode);
-  currentVolumeMode = newMode;
-  
-  return `Switched to ${newMode} mode`;
-}
 
 async function handleResetVolumesShortcut(): Promise<string> {
   const sources = Array.from(audioSources.values());
@@ -565,70 +509,5 @@ async function handleResetVolumesShortcut(): Promise<string> {
   return `Reset ${updated} sources to 50% volume`;
 }
 
-async function handleFocusModeShortcut(): Promise<string> {
-  // Get current active tab
-  try {
-    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!activeTab || !activeTab.id) {
-      return 'No active tab found';
-    }
-    
-    const sources = Array.from(audioSources.values());
-    let muted = 0;
-    
-    for (const source of sources) {
-      const shouldMute = source.tabId !== activeTab.id;
-      source.muted = shouldMute;
-      audioSources.set(source.tabId, source);
-      
-      if (shouldMute) muted++;
-      
-      // Send to native host
-      try {
-        const port = await connectToNativeHost();
-        port.postMessage({
-          action: 'setTabMute',
-          tabId: source.tabId,
-          muted: shouldMute
-        });
-      } catch (error) {
-        console.error('Failed to send focus mode command to native host:', error);
-      }
-    }
-    
-    return `Focus mode: muted ${muted} background sources`;
-  } catch (error) {
-    console.error('Focus mode failed:', error);
-    return 'Focus mode failed';
-  }
-}
-
-async function handleTabControlShortcut(tabIndex: number): Promise<string> {
-  const sources = Array.from(audioSources.values());
-  
-  if (tabIndex >= sources.length) {
-    return `No audio tab at position ${tabIndex + 1}`;
-  }
-  
-  const targetSource = sources[tabIndex];
-  
-  // Toggle mute for the specific tab
-  targetSource.muted = !targetSource.muted;
-  audioSources.set(targetSource.tabId, targetSource);
-  
-  try {
-    const port = await connectToNativeHost();
-    port.postMessage({
-      action: 'setTabMute',
-      tabId: targetSource.tabId,
-      muted: targetSource.muted
-    });
-    
-    return `Tab ${tabIndex + 1} (${targetSource.title}) ${targetSource.muted ? 'muted' : 'unmuted'}`;
-  } catch (error) {
-    console.error('Failed to control tab:', error);
-    return `Failed to control tab ${tabIndex + 1}`;
-  }
-}
 
 export {};

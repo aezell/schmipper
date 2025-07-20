@@ -41,7 +41,7 @@ Successfully implemented global keyboard shortcuts for the Browser Volume Contro
   - `handleShortcutAction()` - Routes shortcut commands to appropriate handlers
   - `handleMuteAllShortcut()` - Toggles mute for all audio sources
   - `handleVolumeAllShortcut()` - Adjusts volume for all sources
-  - `handleCycleModeShortcut()` - Cycles through volume modes
+  - `handleToggleControlShortcut()` - Toggles between individual and grouped control
   - `handleResetVolumesShortcut()` - Resets all volumes to 50%
   - `handleFocusModeShortcut()` - Mutes all except active tab
   - `handleTabControlShortcut()` - Controls individual tabs
@@ -77,7 +77,7 @@ Successfully implemented global keyboard shortcuts for the Browser Volume Contro
 1. **Ctrl+Shift+M** (Cmd+Shift+M on Mac): Mute/unmute all audio sources
 2. **Ctrl+Shift+↑** (Cmd+Shift+↑): Volume up for all sources (+10%)
 3. **Ctrl+Shift+↓** (Cmd+Shift+↓): Volume down for all sources (-10%)
-4. **Ctrl+Shift+Tab** (Cmd+Shift+Tab): Cycle volume modes (Independent → Linked → Inverse)
+4. **Ctrl+Shift+Tab** (Cmd+Shift+Tab): Toggle between individual and grouped volume control
 
 ### Advanced Shortcuts (7)
 5. **Ctrl+Shift+1-5** (Cmd+Shift+1-5): Quick control for individual tabs (first 5 audio sources)
@@ -98,8 +98,8 @@ Successfully implemented global keyboard shortcuts for the Browser Volume Contro
 - Responsive design with dark mode support
 
 ### Integration
-- Seamless integration with existing volume mode system
-- Compatible with Independent, Linked, and Inverse modes
+- Seamless integration with existing volume control system
+- Compatible with individual and grouped control modes
 - Native messaging host communication for volume changes
 - Error handling and graceful degradation
 
@@ -121,7 +121,7 @@ Successfully implemented global keyboard shortcuts for the Browser Volume Contro
 ✅ 11 keyboard shortcuts implemented
 ✅ Global shortcuts configuration in manifest
 ✅ Complete UI for shortcuts management
-✅ Integration with volume modes
+✅ Integration with volume control options
 ✅ Visual feedback system
 ✅ Cross-platform compatibility
 
@@ -160,7 +160,7 @@ Potential improvements for future versions:
 ## Dependencies
 
 - Chrome Extensions API (commands, storage, tabs)
-- Existing volume-modes system
+- Existing volume control system
 - Native messaging host integration
 - TypeScript build system
 - Webpack bundling

@@ -10,28 +10,9 @@
   <div class="popup-container">
     <header class="popup-header">
       <h1>Schmipper</h1>
-      <div class="mode-controls">
-        <label for="mode-select">Mode:</label>
-        <select id="mode-select">
-          <option value="independent" title="Each audio source controlled separately">Independent</option>
-          <option value="linked" title="All sources move together maintaining relative levels">Linked</option>
-          <option value="inverse" title="When one source goes up, others go down proportionally">Inverse</option>
-        </select>
-      </div>
     </header>
 
-    <div class="mode-description hidden" id="mode-description">
-      <p id="mode-description-text"></p>
-    </div>
-
     <div class="master-controls">
-      <div class="master-volume">
-        <label for="master-slider">Master Volume:</label>
-        <div class="volume-control">
-          <input type="range" id="master-slider" min="0" max="100" value="100" />
-          <span id="master-value">100%</span>
-        </div>
-      </div>
       <button id="mute-all" class="mute-button">Mute All</button>
     </div>
 
@@ -92,7 +73,7 @@
       <div class="shortcuts-header">
         <h3>Keyboard Shortcuts</h3>
         <p class="shortcuts-description">
-          These shortcuts work globally, even when the browser isn't focused.
+          Chrome Extensions API limits us to 4 global shortcuts. These work even when the browser isn't focused.
         </p>
       </div>
       <div id="shortcuts-list" class="shortcuts-list">
