@@ -133,6 +133,13 @@ async function handleAudioStateChange(message: AudioStateMessage, sender: chrome
   if (!sender.tab) return;
 
   const tabId = sender.tab.id!;
+  
+  // Validate message.state exists
+  if (!message.state) {
+    console.warn('Received audio state message without state property:', message);
+    return;
+  }
+  
   const { isPlaying } = message.state;
 
   if (isPlaying) {
@@ -206,7 +213,15 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
       source.volume = volume;
       audioSources.set(tabId, source);
 
-      // Send to native host
+      // Send to content script first (immediate fallback)
+      chrome.tabs.sendMessage(tabId, {
+        action: 'setVolume',
+        volume: volume
+      }).catch(() => {
+        console.warn('Failed to send volume command to content script');
+      });
+
+      // Also try native host for system-level control
       connectToNativeHost()
         .then(port => {
           port.postMessage({
@@ -214,11 +229,12 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
             tabId,
             volume
           });
-          sendResponse({ success: true });
         })
         .catch(error => {
-          sendResponse({ success: false, error: error.message });
+          console.warn('Native host volume control failed:', error.message);
         });
+        
+      sendResponse({ success: true });
       
       return true;
     }
@@ -233,7 +249,15 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
       source.muted = muted;
       audioSources.set(tabId, source);
 
-      // Send to native host
+      // Send to content script first (immediate fallback)
+      chrome.tabs.sendMessage(tabId, {
+        action: 'setMute',
+        muted: muted
+      }).catch(() => {
+        console.warn('Failed to send mute command to content script');
+      });
+
+      // Also try native host for system-level control
       connectToNativeHost()
         .then(port => {
           port.postMessage({
@@ -241,11 +265,12 @@ chrome.runtime.onMessage.addListener((message: VolumeMessage | AudioStateMessage
             tabId,
             muted
           });
-          sendResponse({ success: true });
         })
         .catch(error => {
-          sendResponse({ success: false, error: error.message });
+          console.warn('Native host mute control failed:', error.message);
         });
+        
+      sendResponse({ success: true });
       
       return true;
     }

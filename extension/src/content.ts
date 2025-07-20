@@ -7,6 +7,7 @@ class AudioDetector {
   private isDetecting: boolean = false;
 
   constructor() {
+    console.log('[Schmipper] AudioDetector initializing...');
     this.initialize();
   }
 
@@ -66,6 +67,12 @@ class AudioDetector {
 
     // Notify background script about audio state
     this.notifyAudioState();
+
+    // Start periodic scanning for new audio elements
+    setInterval(() => {
+      this.scanForAudioElements();
+      this.notifyAudioState();
+    }, 1000); // Check every second
   }
 
   private scanForAudioElements(): void {
@@ -181,7 +188,9 @@ class AudioDetector {
     chrome.runtime.sendMessage({
       action: 'audioStateChanged',
       tabId: undefined, // Will be set by background script
-      hasAudio: hasAudio,
+      state: {
+        isPlaying: hasAudio
+      },
       timestamp: Date.now()
     }).catch(error => {
       // Ignore errors if background script is not available
@@ -191,10 +200,14 @@ class AudioDetector {
 }
 
 // Initialize audio detector when script loads
+console.log('[Schmipper] Content script loading...', window.location.href);
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    new AudioDetector();
+    console.log('[Schmipper] DOM loaded, initializing AudioDetector');
+    (window as any).audioDetector = new AudioDetector();
   });
 } else {
-  new AudioDetector();
+  console.log('[Schmipper] DOM ready, initializing AudioDetector');
+  (window as any).audioDetector = new AudioDetector();
 }

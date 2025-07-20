@@ -191,7 +191,7 @@ body {
 }
 
 .popup-container {
-  width: 380px;
+  width: 420px;
   max-height: 600px;
   padding: 16px;
   overflow-y: auto;
@@ -282,9 +282,9 @@ body {
 
 .volume-control input[type="range"] {
   flex: 1;
-  height: 4px;
+  height: 6px;
   background: #dadce0;
-  border-radius: 2px;
+  border-radius: 3px;
   outline: none;
   -webkit-appearance: none;
 }
@@ -292,8 +292,8 @@ body {
 .volume-control input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: #1a73e8;
   border-radius: 50%;
   cursor: pointer;
@@ -450,8 +450,8 @@ body {
 }
 
 .source-volume input[type="range"] {
-  width: 80px;
-  height: 3px;
+  width: 100px;
+  height: 5px;
 }
 
 .source-volume span {
