@@ -9,6 +9,7 @@ class AudioDetector {
   private currentMuted: boolean = false;
   private isDetecting: boolean = false;
   private lastNotifiedAudioState: boolean = false;
+  private hasEverHadAudio: boolean = false;
 
   constructor() {
     console.log('[Schmipper] AudioDetector initializing...');
@@ -277,9 +278,9 @@ class AudioDetector {
   }
 
   private hasActiveAudio(): boolean {
-    // Check HTML5 media elements
+    // Check HTML5 media elements - consider both playing and muted-by-extension as "active"
     const hasPlayingMedia = Array.from(this.audioElements).some(element => 
-      !element.paused && !element.muted && element.volume > 0
+      !element.paused && element.volume > 0 // Don't check element.muted - we want to track muted elements too
     );
 
     // Check Web Audio API contexts
@@ -287,7 +288,19 @@ class AudioDetector {
       context.state === 'running'
     );
 
-    return hasPlayingMedia || hasWebAudio;
+    const hasCurrentAudio = hasPlayingMedia || hasWebAudio;
+    
+    // Update the flag if we currently have audio
+    if (hasCurrentAudio) {
+      this.hasEverHadAudio = true;
+    }
+
+    // Return true if we currently have audio OR if we've had audio before and are currently muted by extension
+    const result = hasCurrentAudio || (this.hasEverHadAudio && this.currentMuted);
+    
+    console.log(`[Schmipper] hasActiveAudio: hasPlaying=${hasPlayingMedia}, hasWebAudio=${hasWebAudio}, hasEverHad=${this.hasEverHadAudio}, muted=${this.currentMuted}, result=${result}`);
+    
+    return result;
   }
 
   private setVolume(volume: number): void {
@@ -365,6 +378,9 @@ class AudioDetector {
     });
 
     console.log(`[Schmipper] Set mute to ${muted}`);
+    
+    // Notify audio state change after mute operation
+    this.notifyAudioState();
   }
 
   private notifyAudioStateIfChanged(): void {

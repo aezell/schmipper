@@ -99,7 +99,7 @@ class PopupController {
       },
       (sourceId: string, muted: boolean) => {
         console.log(`[Popup] Mute callback triggered: ${sourceId}, ${muted}`);
-        this.updateSourceMuteDisplay(sourceId, muted);
+        // Don't update UI here since it's already updated immediately in the button click handler
         const source = this.audioSources.get(sourceId);
         if (source) {
           console.log(`[Popup] Sending setMute message to background for tab ${source.tabId}`);
@@ -459,10 +459,9 @@ class PopupController {
       return;
     }
 
-    const newMuted = !source.muted;
-    console.log(`[Popup] Found source, calling volumeController.setSourceMute with ${newMuted}`);
-    // Update the volume controller with the new mute state
-    this.volumeController.setSourceMute(sourceId, newMuted);
+    console.log(`[Popup] Found source, calling volumeController.setSourceMute with ${source.muted}`);
+    // Use the current mute state (which was already updated by the button click handler)
+    this.volumeController.setSourceMute(sourceId, source.muted);
   }
 
   private updateSourceVolumeDisplay(sourceId: string, volume: number): void {
