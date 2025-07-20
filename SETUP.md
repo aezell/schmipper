@@ -152,9 +152,16 @@ When you make changes to the extension code:
 ### Extension Won't Load
 **Problem**: Error loading extension or extension doesn't appear
 
-**Common Error**: "Too many shortcuts specified for 'commands': The maximum is 4."
-- This means you have an old version built with too many shortcuts
-- Solution: Run `npm run build:extension` to rebuild with the fixed manifest
+**Common Errors**:
+
+1. **"Too many shortcuts specified for 'commands': The maximum is 4."**
+   - This means you have an old version built with too many shortcuts
+   - Solution: Run `npm run build:extension` to rebuild with the fixed manifest
+
+2. **"Could not load icon 'icons/icon16.png' specified in 'icons'"**
+   - The manifest was referencing icon files that don't exist yet
+   - **Solution**: Run `npm run build:extension` to get the updated manifest without icon references
+   - The extension will use default browser icons (shows as a gray puzzle piece)
 
 **Other Solutions**:
 - Make sure you selected `extension/dist/` folder, not `extension/`
