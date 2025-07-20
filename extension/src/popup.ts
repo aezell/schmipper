@@ -83,25 +83,33 @@ class PopupController {
   private setupVolumeController(): void {
     this.volumeController.setCallbacks(
       (sourceId: string, volume: number) => {
+        console.log(`[Popup] Volume callback triggered: ${sourceId}, ${volume}`);
         this.updateSourceVolumeDisplay(sourceId, volume);
         const source = this.audioSources.get(sourceId);
         if (source) {
+          console.log(`[Popup] Sending setVolume message to background for tab ${source.tabId}`);
           this.sendMessage({
             action: 'setVolume',
             tabId: source.tabId,
             volume: volume
           });
+        } else {
+          console.warn(`[Popup] No source found for volume callback: ${sourceId}`);
         }
       },
       (sourceId: string, muted: boolean) => {
+        console.log(`[Popup] Mute callback triggered: ${sourceId}, ${muted}`);
         this.updateSourceMuteDisplay(sourceId, muted);
         const source = this.audioSources.get(sourceId);
         if (source) {
+          console.log(`[Popup] Sending setMute message to background for tab ${source.tabId}`);
           this.sendMessage({
             action: 'setMute',
             tabId: source.tabId,
             muted: muted
           });
+        } else {
+          console.warn(`[Popup] No source found for mute callback: ${sourceId}`);
         }
       }
     );
@@ -141,9 +149,15 @@ class PopupController {
 
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      console.log('[Popup] Received message from background:', message);
       this.handleMessage(message);
       sendResponse({ success: true });
     });
+
+    // Also poll for audio sources periodically to catch late-loading audio
+    setInterval(() => {
+      this.refreshAudioSources();
+    }, 2000); // Check every 2 seconds
   }
 
   private async loadStoredSettings(): Promise<void> {
@@ -176,21 +190,42 @@ class PopupController {
   }
 
   private async initialize(): Promise<void> {
+    console.log('[Popup] Starting initialization...');
     this.showLoading();
     
     try {
       // Request current audio sources from background script
+      console.log('[Popup] Requesting audio sources from background...');
       const response = await this.sendMessage({ action: 'getAudioSources' });
+      console.log('[Popup] Received response:', response);
       
       if (response && response.success) {
+        console.log('[Popup] Success response, sources:', response.sources);
         this.handleAudioSourcesUpdate(response.sources || []);
         this.hideLoading();
       } else {
+        console.error('[Popup] Failed response:', response);
         throw new Error(response?.error || 'Failed to get audio sources');
       }
     } catch (error) {
-      console.error('Initialization failed:', error);
+      console.error('[Popup] Initialization failed:', error);
       this.showError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+
+  private async refreshAudioSources(): Promise<void> {
+    try {
+      console.log('[Popup] Refreshing audio sources...');
+      const response = await this.sendMessage({ action: 'getAudioSources' });
+      if (response && response.success) {
+        // Only update if we actually got sources or if we currently have none
+        if (response.sources?.length > 0 || this.audioSources.size === 0) {
+          console.log('[Popup] Refresh found sources:', response.sources);
+          this.handleAudioSourcesUpdate(response.sources || []);
+        }
+      }
+    } catch (error) {
+      console.debug('[Popup] Refresh failed (this is normal):', error);
     }
   }
 
@@ -211,12 +246,32 @@ class PopupController {
   }
 
   private handleAudioSourcesUpdate(sources: AudioSource[]): void {
+    console.log(`[Popup] handleAudioSourcesUpdate called with ${sources.length} sources:`, sources);
+    
+    // Preserve existing volume and mute settings when updating sources
+    const existingSettings = new Map<string, { volume: number; muted: boolean }>();
+    this.audioSources.forEach((source, id) => {
+      existingSettings.set(id, { volume: source.volume, muted: source.muted });
+    });
+    
     this.audioSources.clear();
     sources.forEach(source => {
-      const sourceWithId = { ...source, id: `${source.tabId}` };
+      const sourceId = `${source.tabId}`;
+      const existingSetting = existingSettings.get(sourceId);
+      
+      const sourceWithId = { 
+        ...source, 
+        id: sourceId,
+        // Preserve existing volume/mute settings if they exist
+        volume: existingSetting?.volume ?? source.volume,
+        muted: existingSetting?.muted ?? source.muted
+      };
+      
+      console.log(`[Popup] Adding source: ${sourceWithId.id} (volume: ${sourceWithId.volume}%, muted: ${sourceWithId.muted})`, sourceWithId);
       this.audioSources.set(sourceWithId.id, sourceWithId);
       this.volumeController.addSource(sourceWithId);
     });
+    console.log(`[Popup] Final audioSources map size: ${this.audioSources.size}`);
     this.renderAudioSources();
   }
 
@@ -237,16 +292,20 @@ class PopupController {
   }
 
   private renderAudioSources(): void {
+    console.log(`[Popup] renderAudioSources called, ${this.audioSources.size} sources`);
     this.elements.audioList.innerHTML = '';
 
     if (this.audioSources.size === 0) {
+      console.log(`[Popup] No audio sources, showing no-audio message`);
       this.elements.noAudio.classList.remove('hidden');
       return;
     }
 
+    console.log(`[Popup] Rendering ${this.audioSources.size} audio sources`);
     this.elements.noAudio.classList.add('hidden');
 
     Array.from(this.audioSources.values()).forEach(source => {
+      console.log(`[Popup] Creating element for source: ${source.id} (tab ${source.tabId})`);
       const sourceElement = this.createAudioSourceElement(source);
       this.elements.audioList.appendChild(sourceElement);
     });
@@ -310,9 +369,25 @@ class PopupController {
     volumeSlider.min = '0';
     volumeSlider.max = '100';
     volumeSlider.value = source.volume.toString();
+    console.log(`[Popup] Adding volume slider event listener for source: ${source.id}`);
     volumeSlider.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement;
       const volume = parseInt(target.value, 10);
+      console.log(`[Popup] Volume slider moved! Source: ${source.id}, Volume: ${volume}`);
+      
+      // Update UI immediately for responsive feel
+      const volumeValue = target.parentElement?.querySelector('span');
+      if (volumeValue) {
+        volumeValue.textContent = `${volume}%`;
+      }
+      
+      // Update local source data immediately
+      const localSource = this.audioSources.get(source.id);
+      if (localSource) {
+        localSource.volume = volume;
+      }
+      
+      // Then trigger the actual volume control
       this.setSourceVolume(source.id, volume);
     });
 
@@ -326,7 +401,31 @@ class PopupController {
     muteButton.className = 'source-mute';
     muteButton.textContent = source.muted ? 'Unmute' : 'Mute';
     if (source.muted) muteButton.classList.add('muted');
+    console.log(`[Popup] Adding mute button event listener for source: ${source.id}`);
     muteButton.addEventListener('click', () => {
+      console.log(`[Popup] Mute button clicked! Source: ${source.id}`);
+      
+      // Update UI immediately for responsive feel
+      const localSource = this.audioSources.get(source.id);
+      if (localSource) {
+        const newMuted = !localSource.muted;
+        
+        // Update button immediately
+        if (newMuted) {
+          muteButton.classList.add('muted');
+          muteButton.textContent = 'Unmute';
+          muteButton.closest('.audio-source')?.classList.add('muted');
+        } else {
+          muteButton.classList.remove('muted');
+          muteButton.textContent = 'Mute';
+          muteButton.closest('.audio-source')?.classList.remove('muted');
+        }
+        
+        // Update local source data AFTER UI update
+        localSource.muted = newMuted;
+      }
+      
+      // Then trigger the actual volume control
       this.toggleSourceMute(source.id);
     });
 
@@ -340,19 +439,30 @@ class PopupController {
   }
 
   private setSourceVolume(sourceId: string, volume: number): void {
+    console.log(`[Popup] setSourceVolume called: ${sourceId}, ${volume}`);
     const source = this.audioSources.get(sourceId);
-    if (!source) return;
+    if (!source) {
+      console.warn(`[Popup] Source not found: ${sourceId}`);
+      return;
+    }
 
+    console.log(`[Popup] Found source, calling volumeController.setSourceVolume`);
     // Update the volume controller with the new volume
     this.volumeController.setSourceVolume(sourceId, volume);
   }
 
   private toggleSourceMute(sourceId: string): void {
+    console.log(`[Popup] toggleSourceMute called: ${sourceId}`);
     const source = this.audioSources.get(sourceId);
-    if (!source) return;
+    if (!source) {
+      console.warn(`[Popup] Source not found for mute: ${sourceId}`);
+      return;
+    }
 
+    const newMuted = !source.muted;
+    console.log(`[Popup] Found source, calling volumeController.setSourceMute with ${newMuted}`);
     // Update the volume controller with the new mute state
-    this.volumeController.setSourceMute(sourceId, !source.muted);
+    this.volumeController.setSourceMute(sourceId, newMuted);
   }
 
   private updateSourceVolumeDisplay(sourceId: string, volume: number): void {
@@ -418,6 +528,7 @@ class PopupController {
 
   private hideLoading(): void {
     this.elements.loading.classList.add('hidden');
+    this.elements.connectionStatus.classList.add('hidden');
     this.elements.audioList.parentElement?.classList.remove('hidden');
   }
 

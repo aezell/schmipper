@@ -78,22 +78,40 @@ export class MacOSAudioController implements AudioController {
     const clampedVolume = Math.max(0, Math.min(100, volume));
     
     try {
-      // Use osascript to control application volume via AppleScript
+      // Use AppleScript to control application volume via Audio Unit framework
+      const normalizedVolume = clampedVolume / 100;
       const script = `
         tell application "System Events"
           set targetApp to first application process whose unix id is ${processId}
           if exists targetApp then
-            -- Try to set volume using Audio MIDI Setup if available
-            -- Fall back to loudness control
-            do shell script "loudness set ${clampedVolume / 100} --id ${processId}" with administrator privileges
+            -- Get the application name
+            set appName to name of targetApp
+            
+            -- Use osascript to control audio via AudioUnit
+            try
+              do shell script "osascript -e 'tell application \\"Audio MIDI Setup\\" to set volume output volume of (first audio device whose name contains \\"" & appName & "\\") to " & ${normalizedVolume} & "'"
+            on error
+              -- Fallback: Use system volume control for the specific app
+              tell application appName
+                try
+                  set sound volume to ${clampedVolume}
+                end try
+              end tell
+            end try
           end if
         end tell
       `;
 
       await this.executeAppleScript(script);
     } catch (error) {
-      // Fallback: try using loudness npm package directly
-      await this.setProcessVolumeWithLoudness(processId, clampedVolume);
+      this.logger.debug('AppleScript volume control failed, trying direct approach', {
+        processId,
+        volume: clampedVolume,
+        error: error instanceof Error ? error.message : String(error)
+      }, 'MacOSAudioController');
+      
+      // Fallback: Use direct process volume control via system calls
+      await this.setProcessVolumeDirectly(processId, clampedVolume);
     }
   }
 
@@ -150,22 +168,65 @@ export class MacOSAudioController implements AudioController {
 
   private async getProcessVolume(processId: number): Promise<number> {
     try {
-      // Try to get volume using loudness package
-      const { stdout } = await execAsync(`loudness get --id ${processId}`);
-      const volume = parseFloat(stdout.trim());
-      return Math.round(volume * 100); // Convert from 0-1 to 0-100
+      // Use AppleScript to get application volume
+      const script = `
+        tell application "System Events"
+          set targetApp to first application process whose unix id is ${processId}
+          if exists targetApp then
+            set appName to name of targetApp
+            tell application appName
+              try
+                return sound volume
+              on error
+                return 50
+              end try
+            end tell
+          else
+            return 50
+          end if
+        end tell
+      `;
+      
+      const result = await this.executeAppleScript(script);
+      const volume = parseInt(result.trim()) || 50;
+      return Math.max(0, Math.min(100, volume));
     } catch (error) {
+      this.logger.debug('Failed to get process volume', {
+        processId,
+        error: error instanceof Error ? error.message : String(error)
+      }, 'MacOSAudioController');
       // Fallback: assume volume is 50% if we can't detect it
       return 50;
     }
   }
 
-  private async setProcessVolumeWithLoudness(processId: number, volume: number): Promise<void> {
+  private async setProcessVolumeDirectly(processId: number, volume: number): Promise<void> {
     try {
-      const normalizedVolume = volume / 100; // Convert from 0-100 to 0-1
-      await execAsync(`loudness set ${normalizedVolume} --id ${processId}`);
+      // Use system audio session control via shell commands
+      const script = `
+        # Get the application name from process ID
+        APP_NAME=$(ps -p ${processId} -o comm= | sed 's/.*\\///')
+        
+        # Use SwitchAudioSource to control application-specific audio
+        if command -v SwitchAudioSource >/dev/null 2>&1; then
+          # If SwitchAudioSource is available, use it for app-specific control
+          SwitchAudioSource -t input -c "System Audio" -a "$APP_NAME" -v ${volume}
+        else
+          # Fallback: Use osascript for basic volume control
+          osascript -e "set volume output volume ${volume}"
+        fi
+      `;
+      
+      await execAsync(script);
     } catch (error) {
-      throw new Error(`Failed to set volume for process ${processId}: ${error}`);
+      this.logger.warn('Direct volume control failed', {
+        processId,
+        volume,
+        error: error instanceof Error ? error.message : String(error)
+      }, 'MacOSAudioController');
+      
+      // Final fallback: store volume state for content script to handle
+      throw new Error(`System-level volume control not available for process ${processId}. Volume will be controlled at browser level.`);
     }
   }
 

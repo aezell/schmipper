@@ -28,6 +28,8 @@ export class VolumeModeController {
     masterVolume: 100,
     muteAll: false
   };
+  private volumeCallback?: (sourceId: string, volume: number) => void;
+  private muteCallback?: (sourceId: string, muted: boolean) => void;
 
   constructor() {
     this.loadSettings();
@@ -45,8 +47,9 @@ export class VolumeModeController {
   }
 
   // Additional methods for popup compatibility
-  public setCallbacks(_volumeCallback: any, _muteCallback: any): void {
-    // Placeholder for callback setup if needed
+  public setCallbacks(volumeCallback: (sourceId: string, volume: number) => void, muteCallback: (sourceId: string, muted: boolean) => void): void {
+    this.volumeCallback = volumeCallback;
+    this.muteCallback = muteCallback;
   }
 
   public smoothTransition(_modeOrEnable: VolumeMode | boolean): void {
@@ -63,6 +66,12 @@ export class VolumeModeController {
   }
 
   public addSource(source: AudioSource): void {
+    // Preserve existing volume and mute settings if source already exists
+    const existing = this.sources.get(source.tabId);
+    if (existing) {
+      source.volume = existing.volume;
+      source.muted = existing.muted;
+    }
     this.sources.set(source.tabId, source);
   }
 
@@ -77,6 +86,11 @@ export class VolumeModeController {
     if (source) {
       source.muted = muted;
       this.sources.set(tabId, source);
+      
+      // Trigger mute callback
+      if (this.muteCallback) {
+        this.muteCallback(source.id, source.muted);
+      }
     }
     return this.getSources();
   }
@@ -164,6 +178,11 @@ export class VolumeModeController {
     if (source) {
       source.volume = Math.max(0, Math.min(100, volume));
       this.sources.set(tabId, source);
+      
+      // Trigger volume callback
+      if (this.volumeCallback) {
+        this.volumeCallback(source.id, source.volume);
+      }
     }
     return this.getSources();
   }
@@ -181,6 +200,11 @@ export class VolumeModeController {
       this.getSources().forEach(source => {
         source.volume = newVolume;
         this.sources.set(source.tabId, source);
+        
+        // Trigger volume callback
+        if (this.volumeCallback) {
+          this.volumeCallback(source.id, source.volume);
+        }
       });
     } else {
       // Calculate ratio and apply to all sources
@@ -190,6 +214,11 @@ export class VolumeModeController {
         const adjustedVolume = Math.round(source.volume * ratio);
         source.volume = Math.max(0, Math.min(100, adjustedVolume));
         this.sources.set(source.tabId, source);
+        
+        // Trigger volume callback
+        if (this.volumeCallback) {
+          this.volumeCallback(source.id, source.volume);
+        }
       });
     }
 
@@ -213,11 +242,21 @@ export class VolumeModeController {
     // Set target source volume
     targetSource.volume = newVolume;
     this.sources.set(tabId, targetSource);
+    
+    // Trigger volume callback for target source
+    if (this.volumeCallback) {
+      this.volumeCallback(targetSource.id, targetSource.volume);
+    }
 
     // Distribute remaining volume among other sources
     otherSources.forEach(source => {
       source.volume = Math.round(Math.min(100, volumePerOtherSource));
       this.sources.set(source.tabId, source);
+      
+      // Trigger volume callback for each other source
+      if (this.volumeCallback) {
+        this.volumeCallback(source.id, source.volume);
+      }
     });
 
     return this.getSources();
