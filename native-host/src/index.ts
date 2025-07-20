@@ -9,43 +9,106 @@ import {
   RequestMessage, 
   MessageValidator
 } from './messaging';
+import { getLogger, Logger } from './logger';
 
 class VolumeController {
   private audioController: AudioController;
+  private logger: Logger;
 
   constructor() {
-    this.audioController = createAudioController();
+    this.logger = getLogger();
+    
+    try {
+      this.audioController = createAudioController();
+      this.logger.info('Audio controller initialized', undefined, 'VolumeController');
+    } catch (error) {
+      this.logger.error('Failed to initialize audio controller', error, 'VolumeController');
+      throw error;
+    }
   }
 
   async setVolume(sourceId: string, volume: number): Promise<void> {
-    await this.audioController.setVolume(sourceId, volume);
+    return this.logger.timeAsync(
+      `setVolume_${sourceId}`,
+      async () => {
+        this.logger.debug('Setting volume', { sourceId, volume }, 'VolumeController');
+        await this.audioController.setVolume(sourceId, volume);
+        this.logger.info('Volume set successfully', { sourceId, volume }, 'VolumeController');
+      },
+      'VolumeController'
+    );
   }
 
   async getVolume(sourceId: string): Promise<number> {
-    return await this.audioController.getVolume(sourceId);
+    return this.logger.timeAsync(
+      `getVolume_${sourceId}`,
+      async () => {
+        this.logger.debug('Getting volume', { sourceId }, 'VolumeController');
+        const volume = await this.audioController.getVolume(sourceId);
+        this.logger.debug('Retrieved volume', { sourceId, volume }, 'VolumeController');
+        return volume;
+      },
+      'VolumeController'
+    );
   }
 
   async setMute(sourceId: string, muted: boolean): Promise<void> {
-    await this.audioController.setMute(sourceId, muted);
+    return this.logger.timeAsync(
+      `setMute_${sourceId}`,
+      async () => {
+        this.logger.debug('Setting mute state', { sourceId, muted }, 'VolumeController');
+        await this.audioController.setMute(sourceId, muted);
+        this.logger.info('Mute state set successfully', { sourceId, muted }, 'VolumeController');
+      },
+      'VolumeController'
+    );
   }
 
   async getAudioSources(): Promise<AudioSource[]> {
-    return await this.audioController.getAudioSources();
+    return this.logger.timeAsync(
+      'getAudioSources',
+      async () => {
+        this.logger.debug('Retrieving audio sources', undefined, 'VolumeController');
+        const sources = await this.audioController.getAudioSources();
+        this.logger.info('Retrieved audio sources', { count: sources.length }, 'VolumeController');
+        return sources;
+      },
+      'VolumeController'
+    );
   }
 
   async getBrowserProcesses(): Promise<Array<{ pid: number; name: string; browser: string }>> {
-    return await this.audioController.getBrowserProcesses();
+    return this.logger.timeAsync(
+      'getBrowserProcesses',
+      async () => {
+        this.logger.debug('Retrieving browser processes', undefined, 'VolumeController');
+        const processes = await this.audioController.getBrowserProcesses();
+        this.logger.info('Retrieved browser processes', { count: processes.length }, 'VolumeController');
+        return processes;
+      },
+      'VolumeController'
+    );
   }
 }
 
 class BrowserVolumeHost {
   private controller: VolumeController;
   private messaging: NativeMessagingProtocol;
+  private logger: Logger;
 
   constructor() {
-    this.controller = new VolumeController();
-    this.messaging = new NativeMessagingProtocol();
-    this.setupMessageHandlers();
+    this.logger = getLogger();
+    
+    try {
+      this.logger.info('Initializing BrowserVolumeHost', undefined, 'BrowserVolumeHost');
+      this.controller = new VolumeController();
+      this.messaging = new NativeMessagingProtocol();
+      this.setupMessageHandlers();
+      this.logger.info('BrowserVolumeHost initialized successfully', undefined, 'BrowserVolumeHost');
+    } catch (error) {
+      this.logger.error('Failed to initialize BrowserVolumeHost', error, 'BrowserVolumeHost');
+      throw error;
+    }
   }
 
   private setupMessageHandlers(): void {
@@ -54,34 +117,45 @@ class BrowserVolumeHost {
     });
 
     this.messaging.on('error', (error: Error) => {
-      this.logError('Messaging error:', error);
+      this.logger.error('Messaging error', error, 'BrowserVolumeHost');
       
       // Send error response if possible
       try {
         const response = MessageValidator.createErrorResponse(undefined, error);
         this.messaging.sendResponse(response);
+        this.logger.debug('Sent error response', { error: error.message }, 'BrowserVolumeHost');
       } catch (sendError) {
-        this.logError('Failed to send error response:', sendError);
+        this.logger.error('Failed to send error response', sendError, 'BrowserVolumeHost');
       }
     });
 
     this.messaging.on('disconnect', () => {
-      this.log('Extension disconnected, shutting down');
+      this.logger.info('Extension disconnected, shutting down', undefined, 'BrowserVolumeHost');
       this.shutdown();
     });
 
-    // Optional: Log message activity for debugging
+    // Log message activity for debugging
     this.messaging.on('messageSent', (message) => {
-      this.log('Sent message:', message.action || 'unknown', message.id);
+      this.logger.debug('Sent message', { 
+        action: message.action || 'unknown', 
+        id: message.id 
+      }, 'BrowserVolumeHost');
     });
 
     this.messaging.on('responseSent', (response) => {
-      this.log('Sent response:', response.success ? 'success' : 'error', response.requestId);
+      this.logger.debug('Sent response', { 
+        success: response.success ? 'success' : 'error', 
+        requestId: response.requestId 
+      }, 'BrowserVolumeHost');
     });
   }
 
   private handleMessage(message: RequestMessage): void {
-    this.log('Received message:', message.action, message.id);
+    this.logger.info('Received message', { 
+      action: message.action, 
+      id: message.id,
+      sourceId: message.sourceId 
+    }, 'BrowserVolumeHost');
 
     this.messaging.validateAndRespond(message, async () => {
       return await this.processMessage(message);
@@ -89,100 +163,121 @@ class BrowserVolumeHost {
   }
 
   private async processMessage(message: RequestMessage): Promise<any> {
-    switch (message.action) {
-      case 'setTabVolume':
-        // Map setTabVolume to setVolume for backward compatibility
-        if (message.sourceId && message.volume !== undefined) {
-          await this.controller.setVolume(message.sourceId, message.volume);
+    const timerId = this.logger.startTimer(`processMessage_${message.action}`);
+    
+    try {
+      switch (message.action) {
+        case 'setTabVolume':
+          // Map setTabVolume to setVolume for backward compatibility
+          if (message.sourceId && message.volume !== undefined) {
+            await this.controller.setVolume(message.sourceId, message.volume);
+            this.logger.info('Volume set via setTabVolume', { 
+              sourceId: message.sourceId, 
+              volume: message.volume 
+            }, 'BrowserVolumeHost');
+            return { success: true };
+          }
+          throw new Error('Missing sourceId or volume for setTabVolume');
+
+        case 'getVolume':
+          if (!message.sourceId) {
+            throw new Error('Missing sourceId for getVolume');
+          }
+          const volume = await this.controller.getVolume(message.sourceId);
+          return { volume };
+
+        case 'setMute':
+          if (!message.sourceId || message.muted === undefined) {
+            throw new Error('Missing sourceId or muted for setMute');
+          }
+          await this.controller.setMute(message.sourceId, message.muted);
+          this.logger.info('Mute state set', { 
+            sourceId: message.sourceId, 
+            muted: message.muted 
+          }, 'BrowserVolumeHost');
           return { success: true };
-        }
-        throw new Error('Missing sourceId or volume for setTabVolume');
 
-      case 'getVolume':
-        if (!message.sourceId) {
-          throw new Error('Missing sourceId for getVolume');
-        }
-        const volume = await this.controller.getVolume(message.sourceId);
-        return { volume };
+        case 'getAudioSources':
+          const audioSources = await this.controller.getAudioSources();
+          return { sources: audioSources, count: audioSources.length };
 
-      case 'setMute':
-        if (!message.sourceId || message.muted === undefined) {
-          throw new Error('Missing sourceId or muted for setMute');
-        }
-        await this.controller.setMute(message.sourceId, message.muted);
-        return { success: true };
+        case 'getBrowserProcesses':
+          const processes = await this.controller.getBrowserProcesses();
+          return { processes, count: processes.length };
 
-      case 'getAudioSources':
-        const audioSources = await this.controller.getAudioSources();
-        return { sources: audioSources, count: audioSources.length };
-
-      case 'getBrowserProcesses':
-        const processes = await this.controller.getBrowserProcesses();
-        return { processes, count: processes.length };
-
-      default:
-        throw new Error(`Unknown action: ${message.action}`);
+        default:
+          const error = new Error(`Unknown action: ${message.action}`);
+          this.logger.error('Unknown message action', error, 'BrowserVolumeHost');
+          throw error;
+      }
+    } finally {
+      this.logger.endTimer(timerId, `processMessage_${message.action}`, 'BrowserVolumeHost');
     }
   }
 
   start(): void {
-    this.log('Browser Volume Host starting up...');
+    this.logger.info('Browser Volume Host starting up...', undefined, 'BrowserVolumeHost');
     
     // Initialize audio controller
     try {
       // Test audio controller initialization
       this.controller.getAudioSources()
         .then(sources => {
-          this.log(`Audio controller initialized, found ${sources.length} sources`);
+          this.logger.info('Audio controller initialized', { 
+            sourceCount: sources.length 
+          }, 'BrowserVolumeHost');
         })
         .catch(error => {
-          this.logError('Audio controller initialization warning:', error);
+          this.logger.warn('Audio controller initialization warning', error, 'BrowserVolumeHost');
         });
     } catch (error) {
-      this.logError('Failed to initialize audio controller:', error);
+      this.logger.error('Failed to initialize audio controller', error, 'BrowserVolumeHost');
     }
 
-    this.log('Native messaging host ready');
+    this.logger.info('Native messaging host ready', undefined, 'BrowserVolumeHost');
   }
 
   private shutdown(): void {
-    this.log('Shutting down Browser Volume Host');
+    this.logger.info('Shutting down Browser Volume Host', undefined, 'BrowserVolumeHost');
+    this.logger.shutdown();
     process.exit(0);
-  }
-
-  private log(...args: any[]): void {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] [INFO]`, ...args);
-  }
-
-  private logError(...args: any[]): void {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] [ERROR]`, ...args);
   }
 }
 
+// Setup global error handling with logger
+const globalLogger = getLogger();
+
 // Handle uncaught exceptions gracefully
 process.on('uncaughtException', (error) => {
-  console.error('[FATAL] Uncaught exception:', error);
+  globalLogger.error('Uncaught exception', error, 'GLOBAL');
+  globalLogger.shutdown();
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
+  globalLogger.error('Unhandled rejection', { reason, promise }, 'GLOBAL');
+  globalLogger.shutdown();
   process.exit(1);
 });
 
 // Graceful shutdown on SIGTERM/SIGINT
 process.on('SIGTERM', () => {
-  console.error('[INFO] Received SIGTERM, shutting down gracefully');
+  globalLogger.info('Received SIGTERM, shutting down gracefully', undefined, 'GLOBAL');
+  globalLogger.shutdown();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.error('[INFO] Received SIGINT, shutting down gracefully');
+  globalLogger.info('Received SIGINT, shutting down gracefully', undefined, 'GLOBAL');
+  globalLogger.shutdown();
   process.exit(0);
 });
 
 // Start the native messaging host
-const host = new BrowserVolumeHost();
-host.start();
+try {
+  const host = new BrowserVolumeHost();
+  host.start();
+} catch (error) {
+  globalLogger.error('Failed to start Browser Volume Host', error, 'GLOBAL');
+  process.exit(1);
+}

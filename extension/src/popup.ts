@@ -28,6 +28,15 @@ class PopupController {
     error: HTMLDivElement;
     errorMessage: HTMLParagraphElement;
     retryButton: HTMLButtonElement;
+    dismissError: HTMLButtonElement;
+    errorStack: HTMLPreElement;
+    connectionStatus: HTMLDivElement;
+    statusIndicator: HTMLDivElement;
+    statusDot: HTMLSpanElement;
+    statusText: HTMLSpanElement;
+    errorsPanel: HTMLDivElement;
+    errorsList: HTMLDivElement;
+    clearErrors: HTMLButtonElement;
     shortcutsSection: HTMLDivElement;
     shortcutsToggle: HTMLButtonElement;
     shortcutsList: HTMLDivElement;
@@ -50,6 +59,15 @@ class PopupController {
       error: document.getElementById('error') as HTMLDivElement,
       errorMessage: document.getElementById('error-message') as HTMLParagraphElement,
       retryButton: document.getElementById('retry-button') as HTMLButtonElement,
+      dismissError: document.getElementById('dismiss-error') as HTMLButtonElement,
+      errorStack: document.getElementById('error-stack') as HTMLPreElement,
+      connectionStatus: document.getElementById('connection-status') as HTMLDivElement,
+      statusIndicator: document.getElementById('status-indicator') as HTMLDivElement,
+      statusDot: document.getElementById('status-dot') as HTMLSpanElement,
+      statusText: document.getElementById('status-text') as HTMLSpanElement,
+      errorsPanel: document.getElementById('errors-panel') as HTMLDivElement,
+      errorsList: document.getElementById('errors-list') as HTMLDivElement,
+      clearErrors: document.getElementById('clear-errors') as HTMLButtonElement,
       shortcutsSection: document.getElementById('shortcuts-section') as HTMLDivElement,
       shortcutsToggle: document.getElementById('shortcuts-toggle') as HTMLButtonElement,
       shortcutsList: document.getElementById('shortcuts-list') as HTMLDivElement

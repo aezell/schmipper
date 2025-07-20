@@ -1,6 +1,7 @@
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { AudioController, AudioSource } from './index';
+import { getLogger, Logger } from '../logger';
 
 const execAsync = promisify(exec);
 
@@ -18,35 +19,53 @@ export class MacOSAudioController implements AudioController {
     'Firefox': 'firefox',
     'Safari': 'safari'
   };
+  private logger: Logger = getLogger();
 
   async getAudioSources(): Promise<AudioSource[]> {
-    try {
-      const browserProcesses = await this.getBrowserProcesses();
-      const audioSources: AudioSource[] = [];
+    return this.logger.timeAsync('getAudioSources', async () => {
+      try {
+        this.logger.debug('Getting browser processes', undefined, 'MacOSAudioController');
+        const browserProcesses = await this.getBrowserProcesses();
+        const audioSources: AudioSource[] = [];
 
-      for (const process of browserProcesses) {
-        try {
-          const volume = await this.getProcessVolume(process.pid);
-          const source: AudioSource = {
-            id: `${process.browser}-${process.pid}`,
-            name: `${process.name} (PID: ${process.pid})`,
-            processId: process.pid,
-            volume: volume,
-            isMuted: volume === 0,
-            browserType: this.getBrowserType(process.browser)
-          };
-          audioSources.push(source);
-        } catch (error) {
-          // Skip processes that don't have audio or can't be controlled
-          console.warn(`Failed to get audio info for process ${process.pid}:`, error);
+        this.logger.debug('Processing browser processes', { 
+          processCount: browserProcesses.length 
+        }, 'MacOSAudioController');
+
+        for (const process of browserProcesses) {
+          try {
+            const volume = await this.getProcessVolume(process.pid);
+            const source: AudioSource = {
+              id: `${process.browser}-${process.pid}`,
+              name: `${process.name} (PID: ${process.pid})`,
+              processId: process.pid,
+              volume: volume,
+              isMuted: volume === 0,
+              browserType: this.getBrowserType(process.browser)
+            };
+            audioSources.push(source);
+            this.logger.debug('Added audio source', { 
+              sourceId: source.id, 
+              volume: source.volume 
+            }, 'MacOSAudioController');
+          } catch (error) {
+            // Skip processes that don't have audio or can't be controlled
+            this.logger.debug('Skipping process without audio control', { 
+              pid: process.pid, 
+              error: error instanceof Error ? error.message : String(error) 
+            }, 'MacOSAudioController');
+          }
         }
-      }
 
-      return audioSources;
-    } catch (error) {
-      console.error('Failed to get audio sources:', error);
-      return [];
-    }
+        this.logger.info('Retrieved audio sources', { 
+          sourceCount: audioSources.length 
+        }, 'MacOSAudioController');
+        return audioSources;
+      } catch (error) {
+        this.logger.error('Failed to get audio sources', error, 'MacOSAudioController');
+        return [];
+      }
+    }, 'MacOSAudioController');
   }
 
   async setVolume(sourceId: string, volume: number): Promise<void> {

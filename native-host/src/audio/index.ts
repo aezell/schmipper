@@ -1,5 +1,6 @@
 import * as os from 'os';
 import { MacOSAudioController } from './macos';
+import { WindowsAudioController } from './windows';
 
 export interface AudioSource {
   id: string;
@@ -25,7 +26,7 @@ export function createAudioController(): AudioController {
     case 'darwin':
       return new MacOSAudioController();
     case 'win32':
-      throw new Error('Windows audio control not yet implemented');
+      return new WindowsAudioController();
     case 'linux':
       throw new Error('Linux audio control not yet implemented');
     default:
@@ -34,3 +35,4 @@ export function createAudioController(): AudioController {
 }
 
 export * from './macos';
+export * from './windows';

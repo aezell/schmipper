@@ -16,6 +16,13 @@ interface AudioSource {
 
 import { VolumeMode, VolumeModeController } from './volume-modes';
 import ShortcutsManager from './shortcuts';
+import { 
+  getErrorHandler, 
+  handleError, 
+  wrapOperation,
+  ErrorType, 
+  ErrorSeverity 
+} from './error-handler';
 
 interface VolumeMessage {
   action: string;
@@ -42,37 +49,83 @@ let audioSources: Map<number, AudioSource> = new Map();
 let currentVolumeMode: VolumeMode = 'independent';
 let volumeController: VolumeModeController = new VolumeModeController();
 let shortcutsManager: ShortcutsManager;
+const errorHandler = getErrorHandler();
 
 // Connect to native messaging host
 function connectToNativeHost(): Promise<chrome.runtime.Port> {
-  return new Promise((resolve, reject) => {
-    if (nativePort && nativePort.name) {
-      resolve(nativePort);
-      return;
-    }
-
-    try {
-      nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
-      
-      nativePort.onMessage.addListener((message: any) => {
-        console.log('Received from native host:', message);
-        // Forward messages to popup/content scripts
-        chrome.runtime.sendMessage({ source: 'nativeHost', data: message }).catch(() => {
-          // Popup might not be open, ignore error
+  return wrapOperation(
+    async () => {
+      if (nativePort && nativePort.name) {
+        errorHandler.updateConnectionStatus({ 
+          isConnected: true, 
+          status: 'connected' 
         });
+        return nativePort;
+      }
+
+      errorHandler.updateConnectionStatus({ 
+        status: 'connecting',
+        lastConnectAttempt: Date.now()
       });
 
-      nativePort.onDisconnect.addListener(() => {
-        console.log('Native host disconnected:', chrome.runtime.lastError);
-        nativePort = null;
-      });
+      return new Promise<chrome.runtime.Port>((resolve, reject) => {
+        try {
+          nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
+          
+          nativePort.onMessage.addListener((message: any) => {
+            console.log('Received from native host:', message);
+            // Forward messages to popup/content scripts
+            chrome.runtime.sendMessage({ source: 'nativeHost', data: message }).catch(() => {
+              // Popup might not be open, ignore error
+            });
+          });
 
-      resolve(nativePort);
-    } catch (error) {
-      console.error('Failed to connect to native host:', error);
-      reject(error);
-    }
-  });
+          nativePort.onDisconnect.addListener(() => {
+            const lastError = chrome.runtime.lastError?.message || 'Unknown disconnection';
+            console.log('Native host disconnected:', lastError);
+            
+            handleError(
+              new Error(lastError),
+              ErrorType.NATIVE_MESSAGING,
+              ErrorSeverity.HIGH,
+              { source: 'nativeHost_disconnect' }
+            );
+            
+            errorHandler.updateConnectionStatus({
+              isConnected: false,
+              status: 'disconnected',
+              lastError
+            });
+            
+            nativePort = null;
+          });
+
+          errorHandler.updateConnectionStatus({
+            isConnected: true,
+            status: 'connected',
+            connectionAttempts: 0
+          });
+
+          resolve(nativePort);
+        } catch (error) {
+          const connectError = error instanceof Error ? error : new Error(String(error));
+          
+          errorHandler.updateConnectionStatus({
+            isConnected: false,
+            status: 'error',
+            lastError: connectError.message,
+            connectionAttempts: errorHandler.getConnectionStatus().connectionAttempts + 1
+          });
+          
+          reject(connectError);
+        }
+      });
+    },
+    'connectToNativeHost',
+    ErrorType.NATIVE_MESSAGING,
+    ErrorSeverity.HIGH,
+    true
+  );
 }
 
 // Handle audio state changes from content scripts

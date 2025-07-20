@@ -52,10 +52,36 @@
       <p>Detecting audio sources...</p>
     </div>
 
+    <div class="connection-status" id="connection-status">
+      <div class="status-indicator" id="status-indicator">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+
     <div class="error hidden" id="error">
       <div class="error-icon">⚠️</div>
       <p id="error-message">Failed to connect to audio controller</p>
-      <button id="retry-button">Retry</button>
+      <div class="error-actions">
+        <button id="retry-button">Retry</button>
+        <button id="dismiss-error" class="secondary">Dismiss</button>
+      </div>
+      <details class="error-details">
+        <summary>Technical Details</summary>
+        <div id="error-details-content">
+          <pre id="error-stack"></pre>
+        </div>
+      </details>
+    </div>
+
+    <div class="errors-panel hidden" id="errors-panel">
+      <div class="errors-header">
+        <h4>Recent Issues</h4>
+        <button id="clear-errors" class="clear-button">Clear All</button>
+      </div>
+      <div id="errors-list" class="errors-list">
+        <!-- Recent errors will be listed here -->
+      </div>
     </div>
 
     <div class="shortcuts-controls">

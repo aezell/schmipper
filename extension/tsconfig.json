@@ -17,7 +17,7 @@
     "exactOptionalPropertyTypes": false,
     "declaration": false,
     "sourceMap": true,
-    "types": ["chrome"]
+    "types": ["chrome", "jest"]
   },
   "include": [
     "src/**/*"
