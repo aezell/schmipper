@@ -1,15 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Schmipper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Control volume levels of individual browser tabs - The Tab Volume Chaos Controller",
   
   "permissions": [
     "tabs",
     "activeTab",
     "scripting",
-    "nativeMessaging",
-    "storage"
+    "nativeMessaging"
   ],
   
   "host_permissions": [
@@ -32,5 +31,9 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Schmipper - Volume Controller"
+  },
+
+  "icons": {
+    "128": "icons/icon128.jpg"
   }
 }
